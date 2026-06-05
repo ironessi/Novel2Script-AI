@@ -1,0 +1,42 @@
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# Storage
+storage/uploads/
+storage/scripts/
+storage/logs/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Go
+backend/tmp/
+backend/vendor/
+
+# Python
+ai-service/__pycache__/
+ai-service/**/__pycache__/
+ai-service/.venv/
+ai-service/*.egg-info/
+ai-service/.pytest_cache/
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Docker
+docker-compose.override.yml
