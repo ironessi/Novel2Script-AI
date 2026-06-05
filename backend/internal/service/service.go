@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"io"
 	"novel2script-backend/internal/model/entity"
 )
 
@@ -42,6 +43,11 @@ type IScript interface {
 	Export(ctx context.Context, projectId int64, format string) (string, error)
 }
 
+// IUpload 文件上传服务接口
+type IUpload interface {
+	Upload(ctx context.Context, userId, projectId int64, filename string, fileSize int64, mimeType string, reader io.Reader) (*entity.NovelSourceFile, []entity.NovelChapter, error)
+}
+
 // IAudit 审计日志服务接口
 type IAudit interface {
 	Log(ctx context.Context, userId, projectId int64, action, resourceType string, resourceId int64, ip, userAgent, requestId string) error
@@ -55,5 +61,6 @@ var (
 	Chapter IChapter
 	Task    ITask
 	Script  IScript
+	Upload  IUpload
 	Audit   IAudit
 )

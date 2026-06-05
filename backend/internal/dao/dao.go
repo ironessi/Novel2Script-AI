@@ -187,7 +187,91 @@ func DeleteProject(ctx context.Context, projectId int64) error {
 	return err
 }
 
+// UpdateProjectStatus 更新项目状态
+func UpdateProjectStatus(ctx context.Context, projectId int64, status string) error {
+	_, err := db.Model("novel_project").Ctx(ctx).
+		Where("id", projectId).
+		Where("deleted_at IS NULL").
+		Data(g.Map{"status": status}).
+		Update()
+	return err
+}
+
+// ==================== Source File DAO ====================
+
+// CreateSourceFile 创建源文件记录
+func CreateSourceFile(ctx context.Context, file *entity.NovelSourceFile) (int64, error) {
+	result, err := db.Model("novel_source_file").Ctx(ctx).Insert(g.Map{
+		"project_id":        file.ProjectId,
+		"owner_id":          file.OwnerId,
+		"original_filename": file.OriginalFilename,
+		"storage_path":      file.StoragePath,
+		"file_hash":         file.FileHash,
+		"file_size":         file.FileSize,
+		"mime_type":         file.MimeType,
+		"scan_status":       "clean",
+	})
+	if err != nil {
+		return 0, err
+	}
+	id, _ := result.LastInsertId()
+	return id, nil
+}
+
+// GetSourceFilesByProject 获取项目的所有源文件
+func GetSourceFilesByProject(ctx context.Context, projectId int64) ([]entity.NovelSourceFile, error) {
+	var files []entity.NovelSourceFile
+	err := db.Model("novel_source_file").Ctx(ctx).
+		Where("project_id", projectId).
+		OrderDesc("created_at").
+		Scan(&files)
+	return files, err
+}
+
 // ==================== Chapter DAO ====================
+
+// CreateChapter 创建章节
+func CreateChapter(ctx context.Context, chapter *entity.NovelChapter) (int64, error) {
+	result, err := db.Model("novel_chapter").Ctx(ctx).Insert(g.Map{
+		"project_id":    chapter.ProjectId,
+		"chapter_index": chapter.ChapterIndex,
+		"chapter_title": chapter.ChapterTitle,
+		"content":       chapter.Content,
+		"content_hash":  chapter.ContentHash,
+	})
+	if err != nil {
+		return 0, err
+	}
+	id, _ := result.LastInsertId()
+	return id, nil
+}
+
+// BatchCreateChapters 批量创建章节
+func BatchCreateChapters(ctx context.Context, chapters []entity.NovelChapter) error {
+	if len(chapters) == 0 {
+		return nil
+	}
+	items := make(g.List, 0, len(chapters))
+	for _, ch := range chapters {
+		items = append(items, g.Map{
+			"project_id":    ch.ProjectId,
+			"chapter_index": ch.ChapterIndex,
+			"chapter_title": ch.ChapterTitle,
+			"content":       ch.Content,
+			"content_hash":  ch.ContentHash,
+		})
+	}
+	_, err := db.Model("novel_chapter").Ctx(ctx).Insert(items)
+	return err
+}
+
+// DeleteChaptersByProject 删除项目的所有章节（重新上传时用）
+func DeleteChaptersByProject(ctx context.Context, projectId int64) error {
+	_, err := db.Model("novel_chapter").Ctx(ctx).
+		Where("project_id", projectId).
+		Delete()
+	return err
+}
 
 // GetChapterList 获取章节列表
 func GetChapterList(ctx context.Context, projectId int64) ([]entity.NovelChapter, error) {
