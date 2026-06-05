@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(go mod *)",
+      "Bash(go build *)",
+      "Bash(timeout 5 go run main.go)",
+      "Bash(GOPROXY=https://proxy.golang.org,direct GONOSUMCHECK=* go get github.com/gogf/gf/contrib/drivers/mysql/v2@latest)",
+      "Bash(mysql -u root -plhm20060623 -e \"SELECT 1\")",
+      "Bash(sed -i '' 's/var project entity\\\\.NovelProject/var project *entity.NovelProject/g' internal/dao/dao.go)",
+      "Bash(sed -i '' 's/var chapter entity\\\\.NovelChapter/var chapter *entity.NovelChapter/g' internal/dao/dao.go)",
+      "Bash(sed -i '' 's/var task entity\\\\.AiTask/var task *entity.AiTask/g' internal/dao/dao.go)",
+      "Bash(sed -i '' 's/var script entity\\\\.ScriptVersion/var script *entity.ScriptVersion/g' internal/dao/dao.go)",
+      "Bash(sed -i '' '/if project\\\\.Id == 0 {/,/}/d' internal/dao/dao.go)",
+      "Bash(sed -i '' '/if chapter\\\\.Id == 0 {/,/}/d' internal/dao/dao.go)",
+      "Bash(sed -i '' '/if task\\\\.Id == 0 {/,/}/d' internal/dao/dao.go)",
+      "Bash(sed -i '' '/if script\\\\.Id == 0 {/,/}/d' internal/dao/dao.go)",
+      "Bash(sed -i '' 's/return &project, nil/return project, nil/g' internal/dao/dao.go)",
+      "Bash(sed -i '' 's/return &chapter, nil/return chapter, nil/g' internal/dao/dao.go)",
+      "Bash(sed -i '' 's/return &task, nil/return task, nil/g' internal/dao/dao.go)",
+      "Bash(sed -i '' 's/return &script, nil/return script, nil/g' internal/dao/dao.go)",
+      "Bash(lsof -ti:8000)",
+      "Bash(xargs kill -9)"
+    ]
+  }
+}
