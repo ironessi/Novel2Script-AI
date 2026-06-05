@@ -6,10 +6,8 @@ services:
     container_name: novel2script-mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: root123456
+      MYSQL_ROOT_PASSWORD: lhm20060623
       MYSQL_DATABASE: novel2script
-      MYSQL_USER: novel_app
-      MYSQL_PASSWORD: novel_app_123
     ports:
       - "3306:3306"
     volumes:
