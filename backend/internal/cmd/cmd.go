@@ -11,6 +11,7 @@ import (
 	"novel2script-backend/internal/controller/project"
 	"novel2script-backend/internal/controller/script"
 	"novel2script-backend/internal/controller/task"
+	uploadCtrl "novel2script-backend/internal/controller/upload"
 	"novel2script-backend/internal/dao"
 	"novel2script-backend/internal/middleware"
 
@@ -24,6 +25,7 @@ import (
 	_ "novel2script-backend/internal/logic/project"
 	_ "novel2script-backend/internal/logic/script"
 	_ "novel2script-backend/internal/logic/task"
+	_ "novel2script-backend/internal/logic/upload"
 
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/net/ghttp"
@@ -74,6 +76,9 @@ var Main = gcmd.Command{
 				projGroup.GET("/:id", project.Controller.Detail)
 				projGroup.PUT("/:id", project.Controller.Update)
 				projGroup.DELETE("/:id", project.Controller.Delete)
+
+				// 上传
+				projGroup.POST("/:id/upload", uploadCtrl.Controller.Upload)
 
 				// 章节
 				projGroup.GET("/:id/chapters", chapter.Controller.List)
