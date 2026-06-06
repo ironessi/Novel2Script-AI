@@ -1,6 +1,6 @@
 # Novel2Script-AI 项目路线与进度文档
 
-> 最后更新：2026-06-05
+> 最后更新：2026-06-06
 
 ## 总体进度
 
@@ -9,7 +9,7 @@
 | 第 0 步 | 文档 + 数据库脚本 | ✅ 已完成 | 2026-06-05 |
 | 第 1 步 | GoFrame 后端基础 | ✅ 已完成 | 2026-06-05 |
 | 第 2 步 | 文件上传与章节切分 | ✅ 已完成 | 2026-06-05 |
-| 第 3 步 | Python AI 服务 | ⏳ 待开始 | - |
+| 第 3 步 | Python AI 服务 | ✅ 已完成 | 2026-06-06 |
 | 第 4 步 | 任务系统（接入 AI） | ⏳ 待开始 | - |
 | 第 5 步 | 安全与幻觉检测 | ⏳ 待开始 | - |
 | 第 6 步 | 前端页面 | ⏳ 待开始 | - |
@@ -111,26 +111,48 @@
 
 ---
 
-## 第 3 步：Python AI 服务（待开始）
+## 第 3 步：Python AI 服务
 
-**计划内容：**
-- [ ] FastAPI 项目结构（`ai-service/`）
-- [ ] LLM Client（支持 DeepSeek / Ollama）
-- [ ] Prompt 模板管理（`prompts/` 目录）
-- [ ] 人物抽取接口 `POST /ai/extract-characters`
-- [ ] 剧情事件链接口 `POST /ai/build-plot-events`
-- [ ] 场景拆分接口 `POST /ai/split-scenes`
-- [ ] 剧本生成接口 `POST /ai/generate-script`
-- [ ] YAML 校验接口 `POST /ai/validate-yaml`
-- [ ] 幻觉检测接口 `POST /ai/check-hallucination`
-- [ ] 安全审查接口 `POST /ai/check-safety`
-- [ ] YAML 修复接口 `POST /ai/repair-yaml`
-- [ ] Dockerfile
+**完成内容：**
+- [x] FastAPI 项目结构（`ai-service/`）
+- [x] LLM Client（支持 DeepSeek / OpenAI / Ollama 三种 provider）
+- [x] Prompt 模板管理（8 个模板文件）
+- [x] Pipeline 核心模块（8 个处理模块）
+  - `character_extractor.py` — 人物抽取
+  - `plot_event_builder.py` — 剧情事件链
+  - `scene_planner.py` — 场景拆分
+  - `script_generator.py` — 剧本生成
+  - `schema_validator.py` — YAML Schema 校验
+  - `hallucination_checker.py` — 幻觉检测
+  - `safety_checker.py` — 安全审查
+  - `yaml_repairer.py` — YAML 自动修复
+- [x] 9 个 API 接口
+  - `GET /health` — 健康检查
+  - `POST /ai/analyze` — 完整分析流水线（8 阶段）
+  - `POST /ai/extract-characters` — 人物抽取
+  - `POST /ai/build-plot-events` — 剧情事件链
+  - `POST /ai/split-scenes` — 场景拆分
+  - `POST /ai/generate-script` — 剧本生成
+  - `POST /ai/validate-yaml` — YAML 校验
+  - `POST /ai/check-hallucination` — 幻觉检测
+  - `POST /ai/check-safety` — 安全审查
+  - `POST /ai/repair-yaml` — YAML 修复
+- [x] JSON Schema 校验文件（`schemas/script_schema.json`）
+- [x] 内部认证中间件（Bearer Token）
+- [x] 安全模块（Prompt Injection 防护 + 输出安全检查）
+- [x] Dockerfile + requirements.txt
 
 **技术选型：**
 - Python 3.11+ / FastAPI
 - PyYAML + jsonschema（YAML 校验）
 - OpenAI SDK（兼容 DeepSeek / Ollama）
+- httpx（Ollama HTTP 调用）
+
+**测试结果：**
+```
+AI 服务启动成功（端口 9000）
+GET /health → {"status":"ok","service":"novel2script-ai"}
+```
 
 ---
 
