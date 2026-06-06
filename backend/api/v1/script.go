@@ -48,3 +48,13 @@ type ScriptExportReq struct {
 	ProjectId int64  `json:"project_id" v:"required#项目ID不能为空"`
 	Format    string `json:"format"     v:"in:yaml,markdown#导出格式不合法"`
 }
+
+// HallucinationCheckRes 幻觉检测响应
+type HallucinationCheckRes struct {
+	HallucinationRisk string `json:"hallucination_risk"`
+}
+
+// SafetyCheckRes 安全审查响应
+type SafetyCheckRes struct {
+	SafetyRisk string `json:"safety_risk"`
+}

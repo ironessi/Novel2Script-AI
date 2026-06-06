@@ -227,3 +227,118 @@ func (c *AIServiceClient) HealthCheck(ctx context.Context) error {
 
 	return nil
 }
+
+// doPost 通用 POST 请求
+func (c *AIServiceClient) doPost(ctx context.Context, path string, req interface{}, result interface{}) error {
+	body, err := json.Marshal(req)
+	if err != nil {
+		return err
+	}
+
+	httpReq, err := http.NewRequestWithContext(ctx, "POST", c.baseURL+path, bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("Authorization", "Bearer "+c.token)
+
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		return fmt.Errorf("AI service request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("AI service returned %d: %s", resp.StatusCode, string(respBody))
+	}
+	return json.Unmarshal(respBody, result)
+}
+
+// ValidateYAMLRequest 校验请求
+type ValidateYAMLRequest struct {
+	YamlContent string `json:"yaml_content"`
+}
+
+// ValidateYAMLResponse 校验响应
+type ValidateYAMLResponse struct {
+	Valid  bool              `json:"valid"`
+	Issues []ValidationIssue `json:"issues"`
+}
+
+// ValidateYAML 调用 AI 服务校验 YAML
+func (c *AIServiceClient) ValidateYAML(ctx context.Context, yamlContent string) (*ValidateYAMLResponse, error) {
+	var result ValidateYAMLResponse
+	err := c.doPost(ctx, "/ai/validate-yaml", ValidateYAMLRequest{YamlContent: yamlContent}, &result)
+	return &result, err
+}
+
+// HallucinationRequest 幻觉检测请求
+type HallucinationRequest struct {
+	YamlContent string          `json:"yaml_content"`
+	Chapters    []ChapterInput  `json:"chapters"`
+	Characters  []CharacterData `json:"characters"`
+}
+
+// HallucinationResponse 幻觉检测响应
+type HallucinationResponse = RiskResult
+
+// CheckHallucination 调用 AI 服务检测幻觉
+func (c *AIServiceClient) CheckHallucination(ctx context.Context, yamlContent string, chapters []ChapterInput, characters []CharacterData) (*HallucinationResponse, error) {
+	var result HallucinationResponse
+	err := c.doPost(ctx, "/ai/check-hallucination", HallucinationRequest{
+		YamlContent: yamlContent,
+		Chapters:    chapters,
+		Characters:  characters,
+	}, &result)
+	return &result, err
+}
+
+// SafetyRequest 安全审查请求
+type SafetyRequest struct {
+	YamlContent string `json:"yaml_content"`
+}
+
+// SafetyResponse 安全审查响应
+type SafetyResponse = SafetyResult
+
+// CheckSafety 调用 AI 服务安全审查
+func (c *AIServiceClient) CheckSafety(ctx context.Context, yamlContent string) (*SafetyResponse, error) {
+	var result SafetyResponse
+	err := c.doPost(ctx, "/ai/check-safety", SafetyRequest{YamlContent: yamlContent}, &result)
+	return &result, err
+}
+
+// RepairYAMLRequest 修复请求
+type RepairYAMLRequest struct {
+	YamlContent string            `json:"yaml_content"`
+	Issues      []ValidationIssue `json:"issues"`
+}
+
+// RepairYAMLResponse 修复响应
+type RepairYAMLResponse struct {
+	FixedYaml string            `json:"fixed_yaml"`
+	Changes   []RepairChange    `json:"changes"`
+	Success   bool              `json:"success"`
+}
+
+// RepairChange 修复变更
+type RepairChange struct {
+	Location string `json:"location"`
+	Original string `json:"original"`
+	Fixed    string `json:"fixed"`
+	Reason   string `json:"reason"`
+}
+
+// RepairYAML 调用 AI 服务修复 YAML
+func (c *AIServiceClient) RepairYAML(ctx context.Context, yamlContent string, issues []ValidationIssue) (*RepairYAMLResponse, error) {
+	var result RepairYAMLResponse
+	err := c.doPost(ctx, "/ai/repair-yaml", RepairYAMLRequest{
+		YamlContent: yamlContent,
+		Issues:      issues,
+	}, &result)
+	return &result, err
+}
