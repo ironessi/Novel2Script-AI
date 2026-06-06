@@ -19,7 +19,9 @@
       "Bash(sed -i '' 's/return &task, nil/return task, nil/g' internal/dao/dao.go)",
       "Bash(sed -i '' 's/return &script, nil/return script, nil/g' internal/dao/dao.go)",
       "Bash(lsof -ti:8000)",
-      "Bash(xargs kill -9)"
+      "Bash(xargs kill -9)",
+      "Read(//Users/iron/.claude/debug/**)",
+      "Bash(git reset *)"
     ]
   }
 }

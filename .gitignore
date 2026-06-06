@@ -40,3 +40,4 @@ frontend/dist/
 
 # Docker
 docker-compose.override.yml
+backend/storage/
