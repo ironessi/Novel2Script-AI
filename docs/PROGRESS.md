@@ -10,7 +10,7 @@
 | 第 1 步 | GoFrame 后端基础 | ✅ 已完成 | 2026-06-05 |
 | 第 2 步 | 文件上传与章节切分 | ✅ 已完成 | 2026-06-05 |
 | 第 3 步 | Python AI 服务 | ✅ 已完成 | 2026-06-06 |
-| 第 4 步 | 任务系统（接入 AI） | ⏳ 待开始 | - |
+| 第 4 步 | 任务系统（接入 AI） | ✅ 已完成 | 2026-06-06 |
 | 第 5 步 | 安全与幻觉检测 | ⏳ 待开始 | - |
 | 第 6 步 | 前端页面 | ⏳ 待开始 | - |
 
@@ -156,15 +156,33 @@ GET /health → {"status":"ok","service":"novel2script-ai"}
 
 ---
 
-## 第 4 步：任务系统（待开始）
+## 第 4 步：任务系统
 
-**计划内容：**
-- [ ] Go 后端创建 AI 任务时实际调用 AI Service
-- [ ] Redis 保存任务进度
-- [ ] 异步任务处理（goroutine）
-- [ ] 失败重试机制
-- [ ] 任务状态实时更新
-- [ ] 前端轮询任务进度
+**完成内容：**
+- [x] AI Service 客户端完整对接（AnalyzeResponse 结构体：人物/事件/场景/剧本）
+- [x] Redis 任务进度管理（实时更新 progress 和 current_step）
+- [x] 异步任务执行器（goroutine 后台执行，不阻塞请求）
+- [x] 失败重试机制（最多 3 次，指数退避）
+- [x] 任务状态实时更新（pending → running → completed/failed）
+- [x] 结果入库（character_profile、plot_event、script_version）
+- [x] 项目状态同步更新
+
+**测试结果：**
+```
+完整流水线测试：
+1. 登录 → 获取 Token ✅
+2. 创建项目 ✅
+3. 上传小说 → 切分为 3 章 ✅
+4. 触发 AI 生成 → 任务 ID=2 ✅
+5. 3 秒后查询 → status=running, progress=10 ✅
+6. 等待 AI 处理完成（约 80 秒）✅
+7. 查询最终状态 → status=completed, progress=100 ✅
+8. 验证数据库：
+   - character_profile: 2 人物（林舟、苏晚）✅
+   - plot_event: 3 事件 ✅
+   - script_version: 1 版本（validation=valid, hallucination=low, safety=low）✅
+   - YAML 剧本: 3600 字符，含场景/对白/动作/改编说明 ✅
+```
 
 ---
 
