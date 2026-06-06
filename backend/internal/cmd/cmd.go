@@ -103,6 +103,8 @@ var Main = gcmd.Command{
 				projGroup.GET("/:id/script", script.Controller.Get)
 				projGroup.PUT("/:id/script", script.Controller.Update)
 				projGroup.POST("/:id/validate", script.Controller.Validate)
+				projGroup.POST("/:id/check-hallucination", script.Controller.CheckHallucination)
+				projGroup.POST("/:id/check-safety", script.Controller.CheckSafety)
 				projGroup.GET("/:id/export", script.Controller.Export)
 
 				// 审计日志

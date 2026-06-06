@@ -386,6 +386,72 @@ func GetValidationIssues(ctx context.Context, scriptVersionId int64) ([]entity.V
 	return issues, err
 }
 
+// CreateValidationIssue 创建校验问题
+func CreateValidationIssue(ctx context.Context, issue *entity.ValidationIssue) error {
+	_, err := db.Model("validation_issue").Ctx(ctx).Insert(g.Map{
+		"project_id":        issue.ProjectId,
+		"script_version_id": issue.ScriptVersionId,
+		"issue_type":        issue.IssueType,
+		"severity":          issue.Severity,
+		"message":           issue.Message,
+		"location_path":     issue.LocationPath,
+		"suggestion":        issue.Suggestion,
+	})
+	return err
+}
+
+// BatchCreateValidationIssues 批量创建校验问题
+func BatchCreateValidationIssues(ctx context.Context, issues []entity.ValidationIssue) error {
+	if len(issues) == 0 {
+		return nil
+	}
+	items := make(g.List, 0, len(issues))
+	for _, issue := range issues {
+		items = append(items, g.Map{
+			"project_id":        issue.ProjectId,
+			"script_version_id": issue.ScriptVersionId,
+			"issue_type":        issue.IssueType,
+			"severity":          issue.Severity,
+			"message":           issue.Message,
+			"location_path":     issue.LocationPath,
+			"suggestion":        issue.Suggestion,
+		})
+	}
+	_, err := db.Model("validation_issue").Ctx(ctx).Insert(items)
+	return err
+}
+
+// UpdateScriptValidation 更新剧本校验状态
+func UpdateScriptValidation(ctx context.Context, scriptId int64, validationStatus, hallucinationRisk, safetyRisk string) error {
+	data := g.Map{}
+	if validationStatus != "" {
+		data["validation_status"] = validationStatus
+	}
+	if hallucinationRisk != "" {
+		data["hallucination_risk"] = hallucinationRisk
+	}
+	if safetyRisk != "" {
+		data["safety_risk"] = safetyRisk
+	}
+	if len(data) == 0 {
+		return nil
+	}
+	_, err := db.Model("script_version").Ctx(ctx).
+		Where("id", scriptId).
+		Data(data).
+		Update()
+	return err
+}
+
+// GetCharactersByProject 获取项目的人物档案
+func GetCharactersByProject(ctx context.Context, projectId int64) ([]entity.CharacterProfile, error) {
+	var chars []entity.CharacterProfile
+	err := db.Model("character_profile").Ctx(ctx).
+		Where("project_id", projectId).
+		Scan(&chars)
+	return chars, err
+}
+
 // ==================== Audit Log DAO ====================
 
 // CreateAuditLog 创建审计日志
