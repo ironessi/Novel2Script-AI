@@ -2,8 +2,8 @@ package v1
 
 // CreateTaskReq 创建任务请求
 type CreateTaskReq struct {
-	ProjectId int64  `json:"project_id" v:"required#项目ID不能为空"`
-	TaskType  string `json:"task_type"  v:"required|in:full_generate,character_extract,plot_extract,scene_split,validate#任务类型不合法"`
+	ProjectId int64  `json:"project_id"`
+	TaskType  string `json:"task_type" v:"required|in:full_generate,character_extract,plot_extract,scene_split,validate#任务类型不合法"`
 }
 
 // CreateTaskRes 创建任务响应
