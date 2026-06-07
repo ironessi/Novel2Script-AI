@@ -11,7 +11,7 @@
 | 第 2 步 | 文件上传与章节切分 | ✅ 已完成 | 2026-06-05 |
 | 第 3 步 | Python AI 服务 | ✅ 已完成 | 2026-06-06 |
 | 第 4 步 | 任务系统（接入 AI） | ✅ 已完成 | 2026-06-06 |
-| 第 5 步 | 安全与幻觉检测 | ⏳ 待开始 | - |
+| 第 5 步 | 安全与幻觉检测 | ✅ 已完成 | 2026-06-06 |
 | 第 6 步 | 前端页面 | ⏳ 待开始 | - |
 
 ---
@@ -186,15 +186,24 @@ GET /health → {"status":"ok","service":"novel2script-ai"}
 
 ---
 
-## 第 5 步：安全与幻觉检测（待开始）
+## 第 5 步：安全与幻觉检测
 
-**计划内容：**
-- [ ] Schema Validator（JSON Schema 校验）
-- [ ] Hallucination Checker（幻觉检测）
-- [ ] Safety Checker（安全审查）
-- [ ] YAML Repairer（自动修复）
-- [ ] Validation Issue 入库
-- [ ] 风险报告展示
+**完成内容：**
+- [x] AI Service 客户端新增 4 个独立方法（ValidateYAML/CheckHallucination/CheckSafety/RepairYAML）
+- [x] Script 服务新增 CheckHallucination/CheckSafety 接口
+- [x] 校验问题自动写入 `validation_issue` 表
+- [x] 剧本风险等级自动更新（hallucination_risk/safety_risk）
+- [x] 新增路由：
+  - `POST /api/projects/:id/validate` — YAML 校验
+  - `POST /api/projects/:id/check-hallucination` — 幻觉检测
+  - `POST /api/projects/:id/check-safety` — 安全审查
+
+**测试结果：**
+```
+POST /api/projects/4/validate → valid=true, issues=[] ✅
+POST /api/projects/4/check-hallucination → hallucination_risk=low ✅
+POST /api/projects/4/check-safety → safety_risk=low ✅
+```
 
 ---
 
