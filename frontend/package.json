@@ -1,21 +1,32 @@
 {
-  "name": "frontend",
+  "name": "novel2script-frontend",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vue-tsc && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
-    "axios": "^1.17.0",
-    "js-yaml": "^4.2.0",
-    "vue": "^3.5.34",
-    "vue-router": "^4.6.4"
+    "@codemirror/lang-yaml": "^6.1.2",
+    "@codemirror/theme-one-dark": "^6.1.2",
+    "@vicons/ionicons5": "^0.13.0",
+    "@vueuse/core": "^11.3.0",
+    "codemirror": "^6.0.1",
+    "js-yaml": "^4.1.0",
+    "naive-ui": "^2.40.3",
+    "pinia": "^2.3.0",
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.0"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^6.0.6",
-    "vite": "^8.0.12"
+    "@types/js-yaml": "^4.0.9",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "typescript": "^5.7.2",
+    "unplugin-auto-import": "^0.18.6",
+    "unplugin-vue-components": "^0.27.5",
+    "vite": "^6.0.5",
+    "vue-tsc": "^2.2.0"
   }
 }
