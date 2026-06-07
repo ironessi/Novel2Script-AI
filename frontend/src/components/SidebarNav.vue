@@ -85,7 +85,7 @@ const navItems = computed(() => {
     { path: '/plot', label: '剧情事件链', icon: TimeOutline, badge: store.plotEvents.length },
     { path: '/scenes', label: '场景板', icon: FilmOutline, badge: store.scenes.length },
     { path: '/yaml', label: 'YAML 编辑', icon: CodeSlashOutline },
-    { path: '/validation', label: '校验报告', icon: ShieldCheckmarkOutline, badge: unresolved > 0 ? unresolved : undefined, badgeType: unresolved > 0 ? 'warning' : 'info' },
+    { path: '/validation', label: '校验报告', icon: ShieldCheckmarkOutline, badge: unresolved > 0 ? unresolved : undefined, badgeType: (unresolved > 0 ? 'warning' : 'info') as 'warning' | 'info' },
     { path: '/versions', label: '版本历史', icon: DocumentTextOutline },
     { path: '/audit', label: '审计日志', icon: ListOutline }
   ]
