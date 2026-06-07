@@ -50,7 +50,7 @@ Novel2Script-AI 是一个小说转剧本的结构化生成平台。核心流程�
 
 ## 系统架构
 
-三服务分离架构：GoFrame 后端 (8000) → Python FastAPI AI 服务 (9000) → MySQL/Redis。前端 (Vue3, 5173) 待开发。
+三服务分离架构：GoFrame 后端 (8000) → Python FastAPI AI 服务 (9000) → MySQL/Redis。前端 (Vue3, 5173)。
 
 ```
 浏览器 → 前端(Vue3) → GoFrame后端 → Python AI服务 → LLM(DeepSeek/Ollama)
@@ -74,6 +74,48 @@ Novel2Script-AI 是一个小说转剧本的结构化生成平台。核心流程�
 
 **新增功能流程：** API 类型 → Entity 模型 → DAO 函数 → Service 接口 → Logic 实现 → Controller → `cmd.go` 注册路由
 
+## AI 服务架构 (Python FastAPI)
+
+```
+ai-service/
+├── app/
+│   ├── api/          # 9 个 API 接口
+│   ├── core/         # config, llm_client, logger, security
+│   ├── pipeline/     # 8 个处理模块（人物抽取、事件链、场景、剧本、校验、幻觉、安全、修复）
+│   ├── prompts/      # 8 个 Prompt 模板 (.md)
+│   └── schemas/      # JSON Schema 校验文件
+```
+
+核心流程：`POST /ai/analyze` → 8 阶段串行执行（人物→事件→场景→剧本→校验→修复→幻觉→安全）
+
+LLM Client 支持 DeepSeek / OpenAI / Ollama，通过 `LLM_PROVIDER` 环境变量切换。
+
+## 前端架构 (Vue3 + TypeScript)
+
+```
+frontend/src/
+├── views/        # 13 个页面（Login, Dashboard, Upload, Workflow, Workbench, Characters, Plot, Scenes, YamlEditor, Validation, Versions, Audit）
+├── components/   # 可复用组件（SidebarNav, InspectorPanel, TopBar, RiskBadge, StatusTag 等）
+├── stores/       # Pinia 状态管理（auth, project）
+├── mock/         # Mock 数据（含完整的人物、事件、场景、YAML）
+├── router/       # Vue Router 配置
+└── styles/       # 全局样式
+```
+
+技术栈：Vue3 + TypeScript + Naive UI + Pinia + CodeMirror 6
+
+## Docker 部署
+
+```bash
+cd deploy && docker compose up -d          # 启动全部服务
+docker compose ps                          # 查看状态
+docker compose logs -f backend             # 查看日志
+docker compose down                        # 停止
+docker compose build --no-cache            # 重新构建
+```
+
+服务依赖链：MySQL/Redis → AI Service → Backend → Frontend
+
 **Service 注册模式：**
 ```go
 // logic/xxx/xxx.go
@@ -85,23 +127,26 @@ _ "novel2script-backend/internal/logic/xxx"
 ## 常用命令
 
 ```bash
+# Docker 一键启动（推荐）
+cd deploy && docker compose up -d          # 启动全部 5 个服务
+
+# 本地开发模式
+cd deploy && docker compose up -d mysql redis   # 只启动基础设施
+cd backend && go run main.go                    # 启动后端 (8000)
+cd ai-service && uvicorn app.main:app --host 0.0.0.0 --port 9000 --reload  # 启动 AI 服务
+cd frontend && npm run dev                      # 启动前端 (5173)
+
 # 后端
-cd backend && go run main.go          # 启动服务（自动读取项目根目录 .env）
 cd backend && go build ./...          # 编译检查
 cd backend && go mod tidy             # 同步依赖
 
-# 基础设施
-cd deploy && docker compose up -d mysql redis   # 启动 MySQL + Redis
+# 前端
+cd frontend && npm install            # 安装依赖
+cd frontend && npm run build          # 构建生产版本
 
 # 数据库
-mysql -u root -p < deploy/mysql-init.sql        # 建表（10张表）
-mysql -u root -p novel2script < scripts/seed.sql # 测试数据
-
-# AI 服务（待实现）
-cd ai-service && uvicorn app.main:app --host 0.0.0.0 --port 9000 --reload
-
-# 前端（待实现）
-cd frontend && npm run dev
+mysql -h 127.0.0.1 -P 3307 -u root -plhm20060623 < deploy/mysql-init.sql  # Docker MySQL 端口 3307
+mysql -h 127.0.0.1 -P 3307 -u root -plhm20060623 novel2script < scripts/seed.sql
 ```
 
 ## 配置说明
@@ -111,6 +156,8 @@ cd frontend && npm run dev
 - Redis 使用 2 号数据库（非默认 0）
 - JWT 令牌 24 小时过期，HS256 签名
 - **禁止将 `.env` 提交到 Git**
+- AI 服务通过 `AI_SERVICE_TOKEN` 进行内部认证
+- 前端通过 Vite 代理 `/api` 到后端 (localhost:8000)
 
 ## 数据库规范
 
@@ -121,13 +168,13 @@ cd frontend && npm run dev
 
 ## 端口规划
 
-| 服务 | 端口 |
-|------|------|
-| GoFrame 后端 | 8000 |
-| Python AI 服务 | 9000 |
-| Vue3 前端 | 5173 |
-| MySQL | 3306 |
-| Redis | 6379 |
+| 服务 | 本地开发端口 | Docker 端口 |
+|------|-------------|-------------|
+| GoFrame 后端 | 8000 | 8000 |
+| Python AI 服务 | 9000 | 9000 |
+| Vue3 前端 | 5173 | 5173 |
+| MySQL | 3306 | 3307 |
+| Redis | 6379 | 6379 |
 
 ---
 
@@ -252,4 +299,3 @@ db.Model("novel_project").Ctx(ctx).Where("id", projectId).One()
 | 模块 | 状态 |
 |------|------|
 | 单元测试 | 未编写 |
-| 前端样式优化 | 可进一步完善 |
