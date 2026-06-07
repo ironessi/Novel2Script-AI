@@ -6,10 +6,10 @@ services:
     container_name: novel2script-mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: lhm20060623
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-lhm20060623}
       MYSQL_DATABASE: novel2script
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
       - ./mysql-init.sql:/docker-entrypoint-initdb.d/mysql-init.sql
@@ -36,6 +36,66 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  ai-service:
+    build:
+      context: ../ai-service
+      dockerfile: Dockerfile
+    container_name: novel2script-ai-service
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    ports:
+      - "9000:9000"
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:9000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: novel2script-backend
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      MYSQL_HOST: mysql
+      REDIS_HOST: redis
+      AI_SERVICE_URL: http://ai-service:9000
+    ports:
+      - "8000:8000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ai-service:
+        condition: service_healthy
+    volumes:
+      - ../storage:/app/storage
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: novel2script-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    depends_on:
+      backend:
+        condition: service_healthy
 
 volumes:
   mysql_data:
