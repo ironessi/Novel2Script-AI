@@ -25,7 +25,9 @@
       "Bash(pip3 install *)",
       "Bash(lsof -ti:9000)",
       "Bash(timeout 8 python3 -m uvicorn app.main:app --host 0.0.0.0 --port 9000)",
-      "Bash(python3 -c \"from app.main import app; print\\('Import OK:', app.title\\)\")"
+      "Bash(python3 -c \"from app.main import app; print\\('Import OK:', app.title\\)\")",
+      "Bash(curl -s http://localhost:9000/openapi.json)",
+      "Bash(python3 -c ' *)"
     ]
   }
 }

@@ -14,6 +14,8 @@ import (
 	uploadCtrl "novel2script-backend/internal/controller/upload"
 	"novel2script-backend/internal/dao"
 	"novel2script-backend/internal/middleware"
+	myredis "novel2script-backend/internal/redis"
+	"novel2script-backend/internal/runner"
 
 	// 注册 MySQL 驱动
 	_ "github.com/gogf/gf/contrib/drivers/mysql/v2"
@@ -45,6 +47,16 @@ var Main = gcmd.Command{
 			g.Log().Fatalf(ctx, "数据库初始化失败: %v", err)
 		}
 		g.Log().Info(ctx, "数据库连接成功")
+
+		// 初始化 Redis
+		if err := myredis.Init(); err != nil {
+			g.Log().Fatalf(ctx, "Redis 初始化失败: %v", err)
+		}
+		g.Log().Info(ctx, "Redis 连接成功")
+
+		// 初始化任务执行器
+		runner.Init()
+		g.Log().Info(ctx, "任务执行器初始化完成")
 
 		// 启动 HTTP 服务器
 		s := g.Server()
@@ -91,6 +103,8 @@ var Main = gcmd.Command{
 				projGroup.GET("/:id/script", script.Controller.Get)
 				projGroup.PUT("/:id/script", script.Controller.Update)
 				projGroup.POST("/:id/validate", script.Controller.Validate)
+				projGroup.POST("/:id/check-hallucination", script.Controller.CheckHallucination)
+				projGroup.POST("/:id/check-safety", script.Controller.CheckSafety)
 				projGroup.GET("/:id/export", script.Controller.Export)
 
 				// 审计日志

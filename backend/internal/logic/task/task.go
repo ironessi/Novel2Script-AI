@@ -5,6 +5,7 @@ import (
 
 	"novel2script-backend/internal/dao"
 	"novel2script-backend/internal/model/entity"
+	"novel2script-backend/internal/runner"
 	"novel2script-backend/internal/service"
 )
 
@@ -28,6 +29,13 @@ func (t *taskImpl) Create(ctx context.Context, userId, projectId int64, taskType
 
 	task.Id = id
 	task.Status = "pending"
+
+	// 更新项目状态
+	_ = dao.UpdateProjectStatus(ctx, projectId, "processing")
+
+	// 异步启动 AI 任务
+	runner.RunTask(id)
+
 	return task, nil
 }
 

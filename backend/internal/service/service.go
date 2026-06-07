@@ -41,6 +41,8 @@ type IScript interface {
 	Update(ctx context.Context, userId, projectId int64, yamlContent string) error
 	Validate(ctx context.Context, projectId int64) (bool, []entity.ValidationIssue, error)
 	Export(ctx context.Context, projectId int64, format string) (string, error)
+	CheckHallucination(ctx context.Context, projectId int64) (*entity.ScriptVersion, error)
+	CheckSafety(ctx context.Context, projectId int64) (*entity.ScriptVersion, error)
 }
 
 // IUpload 文件上传服务接口

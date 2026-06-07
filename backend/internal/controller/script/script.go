@@ -159,3 +159,63 @@ func (c *scriptController) Export(r *ghttp.Request) {
 	r.Response.Header().Set("Content-Disposition", "attachment; filename=script."+format)
 	r.Response.Write(content)
 }
+
+// CheckHallucination 幻觉检测
+func (c *scriptController) CheckHallucination(r *ghttp.Request) {
+	projectId, err := strconv.ParseInt(r.GetRouter("id").String(), 10, 64)
+	if err != nil {
+		r.Response.WriteJsonExit(g.Map{"code": 400, "message": "无效的项目ID"})
+		return
+	}
+
+	userId := middleware.GetUserID(r)
+	ok, err := service.Project.CheckPermission(r.Context(), userId, projectId)
+	if err != nil || !ok {
+		r.Response.WriteJsonExit(g.Map{"code": 403, "message": "无权访问此项目"})
+		return
+	}
+
+	script, err := service.Script.CheckHallucination(r.Context(), projectId)
+	if err != nil {
+		r.Response.WriteJsonExit(g.Map{"code": 500, "message": err.Error()})
+		return
+	}
+
+	_ = service.Audit.Log(r.Context(), userId, projectId, "script.check_hallucination", "script_version", script.Id,
+		r.GetClientIp(), r.GetHeader("User-Agent"), middleware.GetRequestID(r))
+
+	r.Response.WriteJsonExit(g.Map{
+		"code": 0,
+		"data": v1.HallucinationCheckRes{HallucinationRisk: script.HallucinationRisk},
+	})
+}
+
+// CheckSafety 安全审查
+func (c *scriptController) CheckSafety(r *ghttp.Request) {
+	projectId, err := strconv.ParseInt(r.GetRouter("id").String(), 10, 64)
+	if err != nil {
+		r.Response.WriteJsonExit(g.Map{"code": 400, "message": "无效的项目ID"})
+		return
+	}
+
+	userId := middleware.GetUserID(r)
+	ok, err := service.Project.CheckPermission(r.Context(), userId, projectId)
+	if err != nil || !ok {
+		r.Response.WriteJsonExit(g.Map{"code": 403, "message": "无权访问此项目"})
+		return
+	}
+
+	script, err := service.Script.CheckSafety(r.Context(), projectId)
+	if err != nil {
+		r.Response.WriteJsonExit(g.Map{"code": 500, "message": err.Error()})
+		return
+	}
+
+	_ = service.Audit.Log(r.Context(), userId, projectId, "script.check_safety", "script_version", script.Id,
+		r.GetClientIp(), r.GetHeader("User-Agent"), middleware.GetRequestID(r))
+
+	r.Response.WriteJsonExit(g.Map{
+		"code": 0,
+		"data": v1.SafetyCheckRes{SafetyRisk: script.SafetyRisk},
+	})
+}
