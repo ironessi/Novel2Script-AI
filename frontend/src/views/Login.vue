@@ -7,10 +7,10 @@
       </div>
       <n-form ref="formRef" :model="form" :rules="rules" label-placement="left">
         <n-form-item label="用户名" path="username">
-          <n-input v-model:value="form.username" placeholder="请输入用户名" />
+          <n-input v-model:value="form.username" placeholder="请输入用户名" @keyup.enter="handleLogin" />
         </n-form-item>
         <n-form-item label="密码" path="password">
-          <n-input v-model:value="form.password" type="password" placeholder="请输入密码" show-password-on="click" />
+          <n-input v-model:value="form.password" type="password" placeholder="请输入密码" show-password-on="click" @keyup.enter="handleLogin" />
         </n-form-item>
         <n-button type="primary" block :loading="loading" @click="handleLogin">
           登录
@@ -19,6 +19,9 @@
       <div class="login-footer">
         还没有账号？<router-link to="/register">注册</router-link>
       </div>
+      <n-alert v-if="error" type="error" style="margin-top: 12px;" closable @close="error = ''">
+        {{ error }}
+      </n-alert>
     </div>
   </div>
 </template>
@@ -33,6 +36,7 @@ const router = useRouter()
 const auth = useAuthStore()
 const formRef = ref<FormInst | null>(null)
 const loading = ref(false)
+const error = ref('')
 
 const form = ref({ username: '', password: '' })
 const rules: FormRules = {
@@ -46,11 +50,15 @@ async function handleLogin() {
   } catch { return }
 
   loading.value = true
-  setTimeout(() => {
-    auth.login('mock-token-xxx', { id: 1, username: form.value.username, email: '', role: 'user' })
-    loading.value = false
+  error.value = ''
+  try {
+    await auth.login(form.value.username, form.value.password)
     router.push('/dashboard')
-  }, 500)
+  } catch (e: any) {
+    error.value = e.message || '登录失败'
+  } finally {
+    loading.value = false
+  }
 }
 </script>
 

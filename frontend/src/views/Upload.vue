@@ -25,7 +25,7 @@
             v-for="(m, key) in adaptationModes"
             :key="key"
             class="mode-card"
-            :class="{ active: selectedMode === key }"
+            :class="{ selected: selectedMode === key }"
             @click="selectedMode = key"
           >
             <div class="mode-label">{{ m.label }}</div>
@@ -34,59 +34,94 @@
         </div>
       </div>
 
+      <!-- 上传按钮 -->
+      <div v-if="file" class="upload-actions">
+        <n-button type="primary" :loading="uploading" @click="handleUpload">
+          {{ uploading ? '上传中...' : '上传并识别章节' }}
+        </n-button>
+      </div>
+
       <!-- 章节预览 -->
       <div v-if="chapters.length > 0" class="preview-section">
         <h3>章节识别预览</h3>
         <n-data-table :columns="columns" :data="chapters" :bordered="false" size="small" />
         <div class="preview-actions">
-          <n-button type="primary" @click="handleConfirm">确认上传，开始分析</n-button>
+          <n-button type="primary" @click="handleConfirm">确认，开始 AI 分析</n-button>
         </div>
       </div>
+
+      <n-alert v-if="error" type="error" style="margin-top: 16px;" closable @close="error = ''">
+        {{ error }}
+      </n-alert>
     </div>
   </AppLayout>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useProjectStore } from '@/stores/project'
-import { adaptationModes, type Chapter } from '@/mock/data'
+import { uploadApi } from '@/api'
+import { adaptationModes } from '@/mock/data'
 import AppLayout from '@/layouts/AppLayout.vue'
 import { CloudUploadOutline, DocumentTextOutline } from '@vicons/ionicons5'
 import type { DataTableColumns } from 'naive-ui'
 
+const route = useRoute()
 const router = useRouter()
 const store = useProjectStore()
+const projectId = Number(route.params.id)
+
 const fileInput = ref<HTMLInputElement | null>(null)
 const file = ref<File | null>(null)
 const selectedMode = ref('screen_script')
-const chapters = ref<Chapter[]>([])
+const uploading = ref(false)
+const error = ref('')
+const chapters = ref<any[]>([])
 
-const columns: DataTableColumns<Chapter> = [
+const columns: DataTableColumns<any> = [
   { title: '序号', key: 'chapter_index', width: 60 },
   { title: '章节标题', key: 'chapter_title' },
-  { title: '字数', key: 'word_count', width: 80 },
-  { title: '段落数', key: 'paragraph_count', width: 80 },
-  { title: '状态', key: 'status', width: 80, render: () => '已识别' }
+  { title: '哈希', key: 'content_hash', width: 200, render: (row) => row.content_hash?.slice(0, 16) + '...' }
 ]
+
+onMounted(() => {
+  store.setCurrentProject(projectId)
+})
 
 function onFileChange(e: Event) {
   const input = e.target as HTMLInputElement
-  if (input.files?.[0]) handleFile(input.files[0])
+  if (input.files?.[0]) file.value = input.files[0]
 }
 
 function onDrop(e: DragEvent) {
-  if (e.dataTransfer?.files?.[0]) handleFile(e.dataTransfer.files[0])
+  if (e.dataTransfer?.files?.[0]) file.value = e.dataTransfer.files[0]
 }
 
-function handleFile(f: File) {
-  file.value = f
-  // Mock: 模拟章节识别
-  chapters.value = store.chapters.map(c => ({ ...c }))
+async function handleUpload() {
+  if (!file.value) return
+  uploading.value = true
+  error.value = ''
+
+  const formData = new FormData()
+  formData.append('file', file.value)
+
+  try {
+    const res: any = await uploadApi.upload(projectId, formData)
+    if (res.code === 0) {
+      chapters.value = res.data.chapters || []
+    } else {
+      error.value = res.message || '上传失败'
+    }
+  } catch (e: any) {
+    error.value = e.message || '上传失败'
+  } finally {
+    uploading.value = false
+  }
 }
 
 function handleConfirm() {
-  router.push(`/projects/${store.currentProjectId}/workflow`)
+  router.push(`/projects/${projectId}/workflow`)
 }
 </script>
 
@@ -107,6 +142,7 @@ function handleConfirm() {
 .upload-hint { font-size: 12px; color: var(--color-text-secondary); margin-top: 4px; }
 .upload-file { display: flex; align-items: center; gap: 8px; justify-content: center; }
 .file-size { color: var(--color-text-secondary); font-size: 12px; }
+.upload-actions { margin-top: 16px; display: flex; justify-content: center; }
 .mode-section { margin-top: 24px; }
 .mode-section h3 { font-size: 15px; font-weight: 600; margin-bottom: 12px; }
 .mode-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
@@ -119,7 +155,7 @@ function handleConfirm() {
   background: var(--color-surface);
 }
 .mode-card:hover { border-color: var(--color-primary); }
-.mode-card.active { border-color: var(--color-primary); background: var(--color-primary-light); }
+.mode-card.selected { border-color: var(--color-primary); background: var(--color-primary-light); }
 .mode-label { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
 .mode-desc { font-size: 12px; color: var(--color-text-secondary); line-height: 1.5; }
 .preview-section { margin-top: 24px; }

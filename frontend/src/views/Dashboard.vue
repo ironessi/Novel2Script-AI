@@ -25,14 +25,20 @@
             </n-radio-group>
           </n-form-item>
           <n-space>
-            <n-button type="primary" @click="handleCreate">创建</n-button>
+            <n-button type="primary" :loading="creating" @click="handleCreate">创建</n-button>
             <n-button @click="showCreate = false">取消</n-button>
           </n-space>
         </n-form>
       </n-card>
 
       <!-- 项目卡片列表 -->
-      <div class="project-grid">
+      <div v-if="loading" class="loading-state">
+        <n-spin size="medium" />
+      </div>
+      <div v-else-if="store.projects.length === 0" class="empty-state">
+        <p>暂无项目，点击右上角创建第一个改编项目</p>
+      </div>
+      <div v-else class="project-grid">
         <div
           v-for="p in store.projects"
           :key="p.id"
@@ -43,10 +49,10 @@
             <h3>{{ p.title }}</h3>
             <StatusTag :status="p.status" />
           </div>
-          <p class="card-desc">{{ p.description }}</p>
+          <p class="card-desc">{{ p.description || '暂无描述' }}</p>
           <div class="card-meta">
-            <span>{{ adaptationModes[p.adaptation_mode]?.label }}</span>
-            <span>{{ p.chapter_count }} 章</span>
+            <span>{{ adaptationModes[p.adaptation_mode]?.label || p.adaptation_mode }}</span>
+            <span>{{ p.chapter_count || 0 }} 章</span>
             <span>{{ p.updated_at }}</span>
           </div>
           <div class="card-actions" @click.stop>
@@ -59,7 +65,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useProjectStore } from '@/stores/project'
 import { adaptationModes } from '@/mock/data'
@@ -69,26 +75,37 @@ import StatusTag from '@/components/StatusTag.vue'
 const router = useRouter()
 const store = useProjectStore()
 const showCreate = ref(false)
+const loading = ref(true)
+const creating = ref(false)
 const newProject = ref({ title: '', description: '', adaptation_mode: 'screen_script' })
+
+onMounted(async () => {
+  await store.fetchProjects()
+  loading.value = false
+})
 
 function openProject(id: number) {
   store.setCurrentProject(id)
   router.push(`/projects/${id}/workbench`)
 }
 
-function handleCreate() {
-  store.projects.push({
-    id: Date.now(),
-    title: newProject.value.title,
-    description: newProject.value.description,
-    adaptation_mode: newProject.value.adaptation_mode as any,
-    status: 'created',
-    chapter_count: 0,
-    updated_at: '刚刚',
-    created_at: '刚刚'
-  })
-  showCreate.value = false
-  newProject.value = { title: '', description: '', adaptation_mode: 'screen_script' }
+async function handleCreate() {
+  if (!newProject.value.title) return
+  creating.value = true
+  try {
+    const id = await store.createProject(
+      newProject.value.title,
+      newProject.value.description,
+      newProject.value.adaptation_mode
+    )
+    showCreate.value = false
+    newProject.value = { title: '', description: '', adaptation_mode: 'screen_script' }
+    openProject(id)
+  } catch (e: any) {
+    alert(e.message || '创建失败')
+  } finally {
+    creating.value = false
+  }
 }
 </script>
 
@@ -96,6 +113,8 @@ function handleCreate() {
 .dashboard { max-width: 960px; }
 .dashboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
 .dashboard-header h2 { font-size: 18px; font-weight: 600; }
+.loading-state { display: flex; justify-content: center; padding: 48px; }
+.empty-state { text-align: center; padding: 48px; color: var(--color-text-secondary); }
 .project-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
 .project-card {
   background: var(--color-surface);

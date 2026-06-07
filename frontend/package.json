@@ -13,6 +13,7 @@
     "@codemirror/theme-one-dark": "^6.1.2",
     "@vicons/ionicons5": "^0.13.0",
     "@vueuse/core": "^11.3.0",
+    "axios": "^1.17.0",
     "codemirror": "^6.0.1",
     "js-yaml": "^4.1.0",
     "naive-ui": "^2.40.3",

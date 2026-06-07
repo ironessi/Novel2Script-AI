@@ -22,6 +22,9 @@
       <div class="login-footer">
         已有账号？<router-link to="/login">登录</router-link>
       </div>
+      <n-alert v-if="error" type="error" style="margin-top: 12px;" closable @close="error = ''">
+        {{ error }}
+      </n-alert>
     </div>
   </div>
 </template>
@@ -29,11 +32,14 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 import type { FormInst, FormRules } from 'naive-ui'
 
 const router = useRouter()
+const auth = useAuthStore()
 const formRef = ref<FormInst | null>(null)
 const loading = ref(false)
+const error = ref('')
 const form = ref({ username: '', email: '', password: '' })
 
 const rules: FormRules = {
@@ -44,10 +50,15 @@ const rules: FormRules = {
 async function handleRegister() {
   try { await formRef.value?.validate() } catch { return }
   loading.value = true
-  setTimeout(() => {
-    loading.value = false
+  error.value = ''
+  try {
+    await auth.register(form.value.username, form.value.email, form.value.password)
     router.push('/login')
-  }, 500)
+  } catch (e: any) {
+    error.value = e.message || '注册失败'
+  } finally {
+    loading.value = false
+  }
 }
 </script>
 
