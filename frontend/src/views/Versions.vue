@@ -24,12 +24,21 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { useProjectStore } from '@/stores/project'
 import AppLayout from '@/layouts/AppLayout.vue'
 import StatusTag from '@/components/StatusTag.vue'
 import RiskBadge from '@/components/RiskBadge.vue'
 
+const route = useRoute()
 const store = useProjectStore()
+const projectId = Number(route.params.id)
+
+onMounted(async () => {
+  store.setCurrentProject(projectId)
+  await store.fetchVersions(projectId)
+})
 
 function createdByType(c: string) {
   const map: Record<string, 'success' | 'warning' | 'info'> = { ai: 'info', user: 'success', system_repair: 'warning' }

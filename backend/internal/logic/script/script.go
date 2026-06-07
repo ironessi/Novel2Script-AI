@@ -5,11 +5,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"novel2script-backend/internal/client"
 	"novel2script-backend/internal/dao"
 	"novel2script-backend/internal/model/entity"
 	"novel2script-backend/internal/service"
+
+	"gopkg.in/yaml.v3"
 )
 
 var aiClient *client.AIServiceClient
@@ -29,6 +32,26 @@ func getAIClient() *client.AIServiceClient {
 
 func (s *scriptImpl) GetLatest(ctx context.Context, projectId int64) (*entity.ScriptVersion, error) {
 	return dao.GetLatestScript(ctx, projectId)
+}
+
+func (s *scriptImpl) GetVersions(ctx context.Context, projectId int64) ([]entity.ScriptVersion, error) {
+	return dao.GetScriptVersions(ctx, projectId)
+}
+
+func (s *scriptImpl) GetCharacters(ctx context.Context, projectId int64) ([]entity.CharacterProfile, error) {
+	return dao.GetCharactersByProject(ctx, projectId)
+}
+
+func (s *scriptImpl) GetPlotEvents(ctx context.Context, projectId int64) ([]entity.PlotEvent, error) {
+	return dao.GetPlotEventsByProject(ctx, projectId)
+}
+
+func (s *scriptImpl) GetValidationIssues(ctx context.Context, projectId int64) ([]entity.ValidationIssue, error) {
+	script, err := dao.GetLatestScript(ctx, projectId)
+	if err != nil || script == nil {
+		return nil, err
+	}
+	return dao.GetValidationIssues(ctx, script.Id)
 }
 
 func (s *scriptImpl) Update(ctx context.Context, userId, projectId int64, yamlContent string) error {
@@ -109,8 +132,10 @@ func (s *scriptImpl) Export(ctx context.Context, projectId int64, format string)
 		return script.YamlContent, nil
 	}
 
-	// Markdown 导出
-	return convertToMarkdown(script.YamlContent), nil
+	if format == "markdown" {
+		return convertToMarkdown(script.YamlContent)
+	}
+	return "", errors.New("不支持的导出格式")
 }
 
 func (s *scriptImpl) CheckHallucination(ctx context.Context, projectId int64) (*entity.ScriptVersion, error) {
@@ -194,9 +219,60 @@ func (s *scriptImpl) CheckSafety(ctx context.Context, projectId int64) (*entity.
 	return script, nil
 }
 
-// convertToMarkdown 将 YAML 剧本转换为 Markdown 格式
-func convertToMarkdown(yamlContent string) string {
-	// 简化实现：直接返回 YAML 内容
-	// 完整实现应该解析 YAML 并格式化为 Markdown
-	return yamlContent
+// convertToMarkdown 将 YAML 剧本转换为便于阅读的 Markdown。
+func convertToMarkdown(yamlContent string) (string, error) {
+	var document struct {
+		Script struct {
+			Metadata struct {
+				Title          string `yaml:"title"`
+				SourceTitle    string `yaml:"source_title"`
+				AdaptationMode string `yaml:"adaptation_mode"`
+			} `yaml:"metadata"`
+			Characters []struct {
+				Name        string `yaml:"name"`
+				Role        string `yaml:"role"`
+				Description string `yaml:"description"`
+			} `yaml:"characters"`
+			Scenes []struct {
+				Order    int    `yaml:"order"`
+				Title    string `yaml:"title"`
+				Time     string `yaml:"time"`
+				Location string `yaml:"location"`
+				Summary  string `yaml:"summary"`
+				Actions  []struct {
+					Character   string `yaml:"character"`
+					Description string `yaml:"description"`
+				} `yaml:"actions"`
+				Dialogues []struct {
+					Character string `yaml:"character"`
+					Line      string `yaml:"line"`
+					Emotion   string `yaml:"emotion"`
+				} `yaml:"dialogues"`
+			} `yaml:"scenes"`
+		} `yaml:"script"`
+	}
+	if err := yaml.Unmarshal([]byte(yamlContent), &document); err != nil {
+		return "", fmt.Errorf("YAML 解析失败: %w", err)
+	}
+
+	script := document.Script
+	var out strings.Builder
+	fmt.Fprintf(&out, "# %s\n\n", script.Metadata.Title)
+	fmt.Fprintf(&out, "- 原作：%s\n- 改编模式：%s\n\n", script.Metadata.SourceTitle, script.Metadata.AdaptationMode)
+	out.WriteString("## 人物\n\n")
+	for _, character := range script.Characters {
+		fmt.Fprintf(&out, "### %s\n\n- 角色：%s\n- 简介：%s\n\n", character.Name, character.Role, character.Description)
+	}
+	out.WriteString("## 场景\n\n")
+	for _, scene := range script.Scenes {
+		fmt.Fprintf(&out, "### %d. %s\n\n- 时间：%s\n- 地点：%s\n- 概要：%s\n\n", scene.Order, scene.Title, scene.Time, scene.Location, scene.Summary)
+		for _, action := range scene.Actions {
+			fmt.Fprintf(&out, "- **动作 %s**：%s\n", action.Character, action.Description)
+		}
+		for _, dialogue := range scene.Dialogues {
+			fmt.Fprintf(&out, "- **%s**（%s）：%s\n", dialogue.Character, dialogue.Emotion, dialogue.Line)
+		}
+		out.WriteString("\n")
+	}
+	return out.String(), nil
 }

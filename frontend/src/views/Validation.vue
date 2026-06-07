@@ -30,16 +30,23 @@
 </template>
 
 <script setup lang="ts">
-import { computed, h } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, h, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useProjectStore } from '@/stores/project'
 import AppLayout from '@/layouts/AppLayout.vue'
 import RiskBadge from '@/components/RiskBadge.vue'
 import type { DataTableColumns } from 'naive-ui'
 import { NButton } from 'naive-ui'
 
+const route = useRoute()
 const router = useRouter()
 const store = useProjectStore()
+const projectId = Number(route.params.id)
+
+onMounted(async () => {
+  store.setCurrentProject(projectId)
+  await store.fetchValidationIssues(projectId)
+})
 
 const highCount = computed(() => store.validationIssues.filter(i => i.severity === 'high').length)
 const mediumCount = computed(() => store.validationIssues.filter(i => i.severity === 'medium').length)

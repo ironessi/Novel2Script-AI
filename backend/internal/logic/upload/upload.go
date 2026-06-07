@@ -111,7 +111,10 @@ func (u *uploadImpl) Upload(ctx context.Context, userId, projectId int64, filena
 	}
 	sourceFile.Id = fileId
 
-	// 7. 保存章节到数据库
+	// 7. 用本次识别结果替换项目章节
+	if err := dao.DeleteChaptersByProject(ctx, projectId); err != nil {
+		return sourceFile, nil, fmt.Errorf("清理旧章节失败: %w", err)
+	}
 	if err := dao.BatchCreateChapters(ctx, chapters); err != nil {
 		return sourceFile, nil, fmt.Errorf("保存章节失败: %w", err)
 	}
@@ -119,7 +122,12 @@ func (u *uploadImpl) Upload(ctx context.Context, userId, projectId int64, filena
 	// 8. 更新项目状态
 	_ = dao.UpdateProjectStatus(ctx, projectId, "uploaded")
 
-	return sourceFile, chapters, nil
+	savedChapters, err := dao.GetChapterList(ctx, projectId)
+	if err != nil {
+		return sourceFile, nil, fmt.Errorf("读取已保存章节失败: %w", err)
+	}
+
+	return sourceFile, savedChapters, nil
 }
 
 // splitChapters 将文本切分为章节

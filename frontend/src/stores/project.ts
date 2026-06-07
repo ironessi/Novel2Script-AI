@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
-import { projectApi, chapterApi, scriptApi, auditApi, taskApi } from '@/api'
+import { projectApi, chapterApi, scriptApi, auditApi, taskApi, resultApi } from '@/api'
+import * as yaml from 'js-yaml'
 import {
   mockCharacters,
   mockPlotEvents,
@@ -74,9 +75,75 @@ export const useProjectStore = defineStore('project', {
         const res: any = await scriptApi.get(projectId)
         if (res.code === 0) {
           this.yamlScript = res.data.yaml_content || ''
+          try {
+            const parsed: any = yaml.load(this.yamlScript)
+            const script = parsed?.script
+            if (Array.isArray(script?.characters)) {
+              this.characters = script.characters
+            }
+            if (Array.isArray(script?.scenes)) {
+              this.scenes = script.scenes.map((scene: any) => ({
+                ...scene,
+                risk_level: scene.risk_level || 'none'
+              }))
+            }
+          } catch (e) {
+            console.error('解析剧本失败', e)
+          }
         }
       } catch (e) {
         console.error('获取剧本失败', e)
+      }
+    },
+
+    async fetchCharacters(projectId: number) {
+      const res: any = await resultApi.characters(projectId)
+      if (res.code === 0) {
+        this.characters = (res.data.characters || []).map((item: any) => ({
+          id: item.character_key,
+          name: item.name,
+          aliases: item.aliases || [],
+          role: item.role_type,
+          description: item.description,
+          personality: item.personality || [],
+          relationships: item.relationships || [],
+          source_trace: item.source_refs || [],
+          confidence: item.confidence
+        }))
+      }
+    },
+
+    async fetchPlotEvents(projectId: number) {
+      const res: any = await resultApi.plotEvents(projectId)
+      if (res.code === 0) {
+        this.plotEvents = (res.data.plot_events || []).map((item: any) => ({
+          id: item.event_key,
+          chapter_index: item.chapter_index,
+          trigger: item.trigger_text,
+          action: item.action_text,
+          result: item.result_text,
+          importance: item.importance,
+          characters_involved: [],
+          source_trace: item.source_refs || [],
+          confidence: item.confidence
+        }))
+      }
+    },
+
+    async fetchVersions(projectId: number) {
+      const res: any = await resultApi.versions(projectId)
+      if (res.code === 0) {
+        this.versions = res.data.versions || []
+      }
+    },
+
+    async fetchValidationIssues(projectId: number) {
+      const res: any = await resultApi.validationIssues(projectId)
+      if (res.code === 0) {
+        this.validationIssues = (res.data.issues || []).map((issue: any) => ({
+          ...issue,
+          resolved: Boolean(issue.resolved)
+        }))
       }
     },
 
@@ -89,6 +156,27 @@ export const useProjectStore = defineStore('project', {
       } catch (e) {
         console.error('获取审计日志失败', e)
       }
+    },
+
+    async saveScript(projectId: number, yamlContent: string) {
+      const res: any = await scriptApi.update(projectId, { yaml_content: yamlContent })
+      if (res.code !== 0) {
+        throw new Error(res.message || '保存剧本失败')
+      }
+      this.yamlScript = yamlContent
+    },
+
+    async validateScript(projectId: number) {
+      const res: any = await scriptApi.validate(projectId)
+      if (res.code !== 0) {
+        throw new Error(res.message || '校验失败')
+      }
+      this.validationIssues = (res.data.issues || []).map((issue: any, index: number) => ({
+        id: index + 1,
+        ...issue,
+        resolved: false
+      }))
+      return res.data
     },
 
     async createProject(title: string, description: string, mode: string) {

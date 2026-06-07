@@ -51,13 +51,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import { useMessage } from 'naive-ui'
 import { useProjectStore } from '@/stores/project'
+import { scriptApi } from '@/api'
 import * as yaml from 'js-yaml'
 import AppLayout from '@/layouts/AppLayout.vue'
 import RiskBadge from '@/components/RiskBadge.vue'
 
+const route = useRoute()
+const message = useMessage()
 const store = useProjectStore()
+const projectId = Number(route.params.id)
 const yamlContent = ref(store.yamlScript)
 
 const parsed = computed(() => {
@@ -78,25 +84,54 @@ function handleFormat() {
   } catch {}
 }
 
-function handleValidate() {
-  // Mock
+async function handleValidate() {
+  try {
+    const result = await store.validateScript(projectId)
+    message[result.valid ? 'success' : 'warning'](result.valid ? 'Schema 校验通过' : `发现 ${result.issues?.length || 0} 个问题`)
+  } catch (e: any) {
+    message.error(e.message || '校验失败')
+  }
 }
 
-function handleSave() {
-  store.updateYaml(yamlContent.value)
+async function handleSave() {
+  try {
+    await store.saveScript(projectId, yamlContent.value)
+    message.success('已保存新版本')
+  } catch (e: any) {
+    message.error(e.message || '保存失败')
+  }
+}
+
+async function downloadExport(format: string) {
+  try {
+    const blob: any = await scriptApi.export(projectId, format)
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `script.${format === 'markdown' ? 'md' : 'yaml'}`
+    a.click()
+    URL.revokeObjectURL(url)
+  } catch (e: any) {
+    message.error(e.message || '导出失败')
+  }
 }
 
 function handleExportYaml() {
-  const blob = new Blob([yamlContent.value], { type: 'text/yaml' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url; a.download = 'script.yaml'; a.click()
-  URL.revokeObjectURL(url)
+  downloadExport('yaml')
 }
 
 function handleExportMd() {
-  // Mock
+  downloadExport('markdown')
 }
+
+onMounted(async () => {
+  store.setCurrentProject(projectId)
+  await Promise.all([
+    store.fetchScript(projectId),
+    store.fetchValidationIssues(projectId)
+  ])
+  yamlContent.value = store.yamlScript
+})
 </script>
 
 <style scoped>

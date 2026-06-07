@@ -101,6 +101,10 @@ var Main = gcmd.Command{
 
 				// 剧本
 				projGroup.GET("/:id/script", script.Controller.Get)
+				projGroup.GET("/:id/versions", script.Controller.Versions)
+				projGroup.GET("/:id/characters", script.Controller.Characters)
+				projGroup.GET("/:id/plot-events", script.Controller.PlotEvents)
+				projGroup.GET("/:id/validation-issues", script.Controller.ValidationIssues)
 				projGroup.PUT("/:id/script", script.Controller.Update)
 				projGroup.POST("/:id/validate", script.Controller.Validate)
 				projGroup.POST("/:id/check-hallucination", script.Controller.CheckHallucination)
@@ -126,4 +130,3 @@ var Main = gcmd.Command{
 		return nil
 	},
 }
-

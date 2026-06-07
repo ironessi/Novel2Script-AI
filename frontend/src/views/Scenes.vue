@@ -37,12 +37,21 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { useProjectStore } from '@/stores/project'
 import AppLayout from '@/layouts/AppLayout.vue'
 import RiskBadge from '@/components/RiskBadge.vue'
 import { AlertCircleOutline } from '@vicons/ionicons5'
 
+const route = useRoute()
 const store = useProjectStore()
+const projectId = Number(route.params.id)
+
+onMounted(async () => {
+  store.setCurrentProject(projectId)
+  await store.fetchScript(projectId)
+})
 
 function getCharName(id: string) {
   return store.characters.find(c => c.id === id)?.name || id

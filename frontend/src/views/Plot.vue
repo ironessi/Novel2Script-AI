@@ -27,7 +27,7 @@
                 <span>{{ e.result }}</span>
               </div>
             </div>
-            <div class="event-chars">
+            <div v-if="e.characters_involved.length" class="event-chars">
               涉及：{{ e.characters_involved.map(id => getCharName(id)).join('、') }}
             </div>
           </div>
@@ -38,10 +38,19 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { useProjectStore } from '@/stores/project'
 import AppLayout from '@/layouts/AppLayout.vue'
 
+const route = useRoute()
 const store = useProjectStore()
+const projectId = Number(route.params.id)
+
+onMounted(async () => {
+  store.setCurrentProject(projectId)
+  await store.fetchPlotEvents(projectId)
+})
 
 function importanceType(i: string) {
   const map: Record<string, 'success' | 'warning' | 'error' | 'info'> = { high: 'error', medium: 'warning', low: 'info' }

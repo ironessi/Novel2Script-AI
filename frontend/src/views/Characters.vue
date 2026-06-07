@@ -40,10 +40,19 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { useProjectStore } from '@/stores/project'
 import AppLayout from '@/layouts/AppLayout.vue'
 
+const route = useRoute()
 const store = useProjectStore()
+const projectId = Number(route.params.id)
+
+onMounted(async () => {
+  store.setCurrentProject(projectId)
+  await store.fetchCharacters(projectId)
+})
 
 function roleLabel(r: string) {
   const map: Record<string, string> = { protagonist: '主角', antagonist: '反派', supporting: '配角', minor: '龙套' }

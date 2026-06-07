@@ -38,6 +38,10 @@ type ITask interface {
 // IScript 剧本服务接口
 type IScript interface {
 	GetLatest(ctx context.Context, projectId int64) (*entity.ScriptVersion, error)
+	GetVersions(ctx context.Context, projectId int64) ([]entity.ScriptVersion, error)
+	GetCharacters(ctx context.Context, projectId int64) ([]entity.CharacterProfile, error)
+	GetPlotEvents(ctx context.Context, projectId int64) ([]entity.PlotEvent, error)
+	GetValidationIssues(ctx context.Context, projectId int64) ([]entity.ValidationIssue, error)
 	Update(ctx context.Context, userId, projectId int64, yamlContent string) error
 	Validate(ctx context.Context, projectId int64) (bool, []entity.ValidationIssue, error)
 	Export(ctx context.Context, projectId int64, format string) (string, error)

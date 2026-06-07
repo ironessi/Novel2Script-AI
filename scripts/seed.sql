@@ -7,12 +7,12 @@ USE novel2script;
 
 -- ============================================================
 -- 1. 测试用户
--- 密码均为 bcrypt hash of "test123456"
+-- 管理员密码为 admin123456，测试用户密码为 test123456
 -- ============================================================
 INSERT INTO sys_user (username, email, password_hash, role, status, created_at, updated_at) VALUES
-('admin', 'admin@novel2script.local', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'admin', 'active', NOW(), NOW()),
-('testuser1', 'test1@novel2script.local', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'user', 'active', NOW(), NOW()),
-('testuser2', 'test2@novel2script.local', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'user', 'active', NOW(), NOW())
+('admin', 'admin@novel2script.local', '$2y$10$yLn5o5SS1.5SaEs02eUqve7yRPwfXsFcuirAT5qLQwqtJbmhDIT4W', 'admin', 'active', NOW(), NOW()),
+('testuser1', 'test1@novel2script.local', '$2y$10$OYi.bCoMF4RV90aJCxuu3uh.Cp9s0DA1r5dBEo3acEzVEArPuKFJq', 'user', 'active', NOW(), NOW()),
+('testuser2', 'test2@novel2script.local', '$2y$10$OYi.bCoMF4RV90aJCxuu3uh.Cp9s0DA1r5dBEo3acEzVEArPuKFJq', 'user', 'active', NOW(), NOW())
 ON DUPLICATE KEY UPDATE username=username;
 
 -- ============================================================

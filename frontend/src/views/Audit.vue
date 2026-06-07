@@ -8,25 +8,29 @@
 </template>
 
 <script setup lang="ts">
-import { h } from 'vue'
+import { onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { useProjectStore } from '@/stores/project'
 import AppLayout from '@/layouts/AppLayout.vue'
-import StatusTag from '@/components/StatusTag.vue'
 import type { DataTableColumns } from 'naive-ui'
 
+const route = useRoute()
 const store = useProjectStore()
+const projectId = Number(route.params.id)
 
 const columns: DataTableColumns<any> = [
   { title: '时间', key: 'created_at', width: 160 },
   { title: '操作', key: 'action', width: 140 },
-  { title: '项目', key: 'project_title' },
-  { title: '用户', key: 'user', width: 100 },
-  {
-    title: '状态', key: 'status', width: 80,
-    render: (row) => h(StatusTag, { status: row.status === '成功' ? 'completed' : 'has_risk' })
-  },
+  { title: '资源类型', key: 'resource_type' },
+  { title: '用户 ID', key: 'user_id', width: 100 },
+  { title: 'IP 地址', key: 'ip_address', width: 130 },
   { title: 'Request ID', key: 'request_id', width: 120 }
 ]
+
+onMounted(async () => {
+  store.setCurrentProject(projectId)
+  await store.fetchAuditLogs(projectId)
+})
 </script>
 
 <style scoped>

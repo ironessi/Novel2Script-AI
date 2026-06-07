@@ -197,7 +197,7 @@ INSERT INTO sys_user (username, email, password_hash, role, status, created_at, 
 VALUES (
     'admin',
     'admin@novel2script.local',
-    '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+    '$2y$10$yLn5o5SS1.5SaEs02eUqve7yRPwfXsFcuirAT5qLQwqtJbmhDIT4W',
     'admin',
     'active',
     NOW(),

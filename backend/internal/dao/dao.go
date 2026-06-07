@@ -48,11 +48,11 @@ func DB() gdb.DB {
 // CreateUser 创建用户
 func CreateUser(ctx context.Context, user *entity.SysUser) (int64, error) {
 	result, err := db.Model("sys_user").Ctx(ctx).Insert(g.Map{
-		"username":     user.Username,
-		"email":        user.Email,
+		"username":      user.Username,
+		"email":         user.Email,
 		"password_hash": user.PasswordHash,
-		"role":         user.Role,
-		"status":       user.Status,
+		"role":          user.Role,
+		"status":        user.Status,
 	})
 	if err != nil {
 		return 0, err
@@ -139,7 +139,8 @@ func GetProjectList(ctx context.Context, userId int64, page, pageSize int) ([]en
 	}
 
 	var projects []entity.NovelProject
-	err = m.Page(page, pageSize).
+	err = m.Fields("novel_project.*", "(SELECT COUNT(*) FROM novel_chapter WHERE novel_chapter.project_id = novel_project.id) AS chapter_count").
+		Page(page, pageSize).
 		OrderDesc("created_at").
 		Scan(&projects)
 	if err != nil {
@@ -359,6 +360,16 @@ func GetLatestScript(ctx context.Context, projectId int64) (*entity.ScriptVersio
 	return &script, nil
 }
 
+// GetScriptVersions 获取项目的剧本版本历史
+func GetScriptVersions(ctx context.Context, projectId int64) ([]entity.ScriptVersion, error) {
+	var versions []entity.ScriptVersion
+	err := db.Model("script_version").Ctx(ctx).
+		Where("project_id", projectId).
+		OrderDesc("version_no").
+		Scan(&versions)
+	return versions, err
+}
+
 // CreateScriptVersion 创建剧本版本
 func CreateScriptVersion(ctx context.Context, script *entity.ScriptVersion) (int64, error) {
 	result, err := db.Model("script_version").Ctx(ctx).Insert(g.Map{
@@ -450,6 +461,16 @@ func GetCharactersByProject(ctx context.Context, projectId int64) ([]entity.Char
 		Where("project_id", projectId).
 		Scan(&chars)
 	return chars, err
+}
+
+// GetPlotEventsByProject 获取项目的剧情事件链
+func GetPlotEventsByProject(ctx context.Context, projectId int64) ([]entity.PlotEvent, error) {
+	var events []entity.PlotEvent
+	err := db.Model("plot_event").Ctx(ctx).
+		Where("project_id", projectId).
+		OrderAsc("chapter_index, id").
+		Scan(&events)
+	return events, err
 }
 
 // ==================== Audit Log DAO ====================

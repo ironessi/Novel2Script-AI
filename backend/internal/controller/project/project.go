@@ -59,7 +59,9 @@ func (c *projectController) List(r *ghttp.Request) {
 			Description:    p.Description,
 			AdaptationMode: p.AdaptationMode,
 			Status:         p.Status,
+			ChapterCount:   p.ChapterCount,
 			CreatedAt:      p.CreatedAt.Format("2006-01-02 15:04:05"),
+			UpdatedAt:      p.UpdatedAt.Format("2006-01-02 15:04:05"),
 		})
 	}
 

@@ -48,12 +48,23 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { useProjectStore } from '@/stores/project'
 import AppLayout from '@/layouts/AppLayout.vue'
 
+const route = useRoute()
 const store = useProjectStore()
+const projectId = Number(route.params.id)
 const activeTab = ref('script')
+
+onMounted(async () => {
+  store.setCurrentProject(projectId)
+  await Promise.all([
+    store.fetchChapters(projectId),
+    store.fetchScript(projectId)
+  ])
+})
 
 function importanceType(i: string) {
   const map: Record<string, 'success' | 'warning' | 'error' | 'info'> = { high: 'error', medium: 'warning', low: 'info' }

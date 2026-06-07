@@ -82,8 +82,18 @@ export const scriptApi = {
     api.post(`/projects/${projectId}/check-hallucination`),
   checkSafety: (projectId: number) =>
     api.post(`/projects/${projectId}/check-safety`),
+  export: (projectId: number, format = 'yaml') =>
+    api.get(`/projects/${projectId}/export`, { params: { format }, responseType: 'blob' }),
   exportUrl: (projectId: number, format = 'yaml') =>
     `/api/projects/${projectId}/export?format=${format}`
+}
+
+// ========== Generated Results ==========
+export const resultApi = {
+  characters: (projectId: number) => api.get(`/projects/${projectId}/characters`),
+  plotEvents: (projectId: number) => api.get(`/projects/${projectId}/plot-events`),
+  versions: (projectId: number) => api.get(`/projects/${projectId}/versions`),
+  validationIssues: (projectId: number) => api.get(`/projects/${projectId}/validation-issues`)
 }
 
 // ========== Audit ==========

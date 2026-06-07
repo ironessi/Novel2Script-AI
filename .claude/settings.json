@@ -27,7 +27,9 @@
       "Bash(timeout 8 python3 -m uvicorn app.main:app --host 0.0.0.0 --port 9000)",
       "Bash(python3 -c \"from app.main import app; print\\('Import OK:', app.title\\)\")",
       "Bash(curl -s http://localhost:9000/openapi.json)",
-      "Bash(python3 -c ' *)"
+      "Bash(python3 -c ' *)",
+      "Bash(mysql -h 127.0.0.1 -P 3307 -u root -plhm20060623 novel2script -e ' *)",
+      "Bash(curl -s http://localhost:8000/api/projects/3/script -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo4LCJ1c2VybmFtZSI6ImRlbW8yIiwicm9sZSI6InVzZXIiLCJpc3MiOiJub3ZlbDJzY3JpcHQiLCJleHAiOjE3ODA5NDg2NDYsImlhdCI6MTc4MDg2MjI0Nn0.VD9c6sY5t1FS1XJEkp8m7Z_b2MFqLdBBGXlPL3b_Jbg')"
     ]
   }
 }

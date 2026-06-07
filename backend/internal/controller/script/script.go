@@ -55,6 +55,99 @@ func (c *scriptController) Get(r *ghttp.Request) {
 	})
 }
 
+// Versions 获取剧本版本历史
+func (c *scriptController) Versions(r *ghttp.Request) {
+	projectId, ok := c.authorizedProjectID(r)
+	if !ok {
+		return
+	}
+
+	versions, err := service.Script.GetVersions(r.Context(), projectId)
+	if err != nil {
+		r.Response.WriteJsonExit(g.Map{"code": 500, "message": "获取版本历史失败"})
+		return
+	}
+
+	items := make([]v1.ScriptVersionItem, 0, len(versions))
+	for _, version := range versions {
+		items = append(items, v1.ScriptVersionItem{
+			Id:                version.Id,
+			VersionNo:         version.VersionNo,
+			ValidationStatus:  version.ValidationStatus,
+			HallucinationRisk: version.HallucinationRisk,
+			SafetyRisk:        version.SafetyRisk,
+			CreatedBy:         version.CreatedBy,
+			CreatedAt:         version.CreatedAt.Format("2006-01-02 15:04:05"),
+		})
+	}
+
+	r.Response.WriteJsonExit(g.Map{"code": 0, "data": g.Map{"versions": items}})
+}
+
+// Characters 获取人物档案
+func (c *scriptController) Characters(r *ghttp.Request) {
+	projectId, ok := c.authorizedProjectID(r)
+	if !ok {
+		return
+	}
+
+	characters, err := service.Script.GetCharacters(r.Context(), projectId)
+	if err != nil {
+		r.Response.WriteJsonExit(g.Map{"code": 500, "message": "获取人物档案失败"})
+		return
+	}
+
+	r.Response.WriteJsonExit(g.Map{"code": 0, "data": g.Map{"characters": characters}})
+}
+
+// PlotEvents 获取剧情事件链
+func (c *scriptController) PlotEvents(r *ghttp.Request) {
+	projectId, ok := c.authorizedProjectID(r)
+	if !ok {
+		return
+	}
+
+	events, err := service.Script.GetPlotEvents(r.Context(), projectId)
+	if err != nil {
+		r.Response.WriteJsonExit(g.Map{"code": 500, "message": "获取剧情事件链失败"})
+		return
+	}
+
+	r.Response.WriteJsonExit(g.Map{"code": 0, "data": g.Map{"plot_events": events}})
+}
+
+// ValidationIssues 获取最新剧本的未解决校验问题
+func (c *scriptController) ValidationIssues(r *ghttp.Request) {
+	projectId, ok := c.authorizedProjectID(r)
+	if !ok {
+		return
+	}
+
+	issues, err := service.Script.GetValidationIssues(r.Context(), projectId)
+	if err != nil {
+		r.Response.WriteJsonExit(g.Map{"code": 500, "message": "获取校验问题失败"})
+		return
+	}
+
+	r.Response.WriteJsonExit(g.Map{"code": 0, "data": g.Map{"issues": issues}})
+}
+
+func (c *scriptController) authorizedProjectID(r *ghttp.Request) (int64, bool) {
+	projectId, err := strconv.ParseInt(r.GetRouter("id").String(), 10, 64)
+	if err != nil {
+		r.Response.WriteJsonExit(g.Map{"code": 400, "message": "无效的项目ID"})
+		return 0, false
+	}
+
+	userId := middleware.GetUserID(r)
+	ok, err := service.Project.CheckPermission(r.Context(), userId, projectId)
+	if err != nil || !ok {
+		r.Response.WriteJsonExit(g.Map{"code": 403, "message": "无权访问此项目"})
+		return 0, false
+	}
+	return projectId, true
+}
+
 // Update 修改剧本
 func (c *scriptController) Update(r *ghttp.Request) {
 	projectId, err := strconv.ParseInt(r.GetRouter("id").String(), 10, 64)

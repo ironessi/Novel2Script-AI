@@ -33,7 +33,9 @@ type ProjectItem struct {
 	Description    string `json:"description"`
 	AdaptationMode string `json:"adaptation_mode"`
 	Status         string `json:"status"`
+	ChapterCount   int    `json:"chapter_count"`
 	CreatedAt      string `json:"created_at"`
+	UpdatedAt      string `json:"updated_at"`
 }
 
 // ProjectDetailReq 项目详情请求

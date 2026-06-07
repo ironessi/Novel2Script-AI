@@ -4,7 +4,7 @@
     <div class="app-main">
       <TopBar />
       <div class="app-content">
-        <router-view />
+        <slot />
       </div>
     </div>
     <InspectorPanel />
@@ -12,9 +12,25 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import { useProjectStore } from '@/stores/project'
 import SidebarNav from '@/components/SidebarNav.vue'
 import TopBar from '@/components/TopBar.vue'
 import InspectorPanel from '@/components/InspectorPanel.vue'
+
+const route = useRoute()
+const store = useProjectStore()
+
+onMounted(async () => {
+  if (store.projects.length === 0) {
+    await store.fetchProjects()
+  }
+  const projectId = Number(route.params.id)
+  if (projectId) {
+    store.setCurrentProject(projectId)
+  }
+})
 </script>
 
 <style scoped>
@@ -34,5 +50,21 @@ import InspectorPanel from '@/components/InspectorPanel.vue'
   overflow-y: auto;
   padding: 20px 24px;
   background: var(--color-bg);
+}
+
+@media (max-width: 1100px) {
+  .app-layout :deep(.inspector) {
+    display: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .app-layout :deep(.sidebar) {
+    display: none;
+  }
+
+  .app-content {
+    padding: 16px;
+  }
 }
 </style>

@@ -17,9 +17,20 @@ type ScriptGetRes struct {
 	CreatedAt         string `json:"created_at"`
 }
 
+// ScriptVersionItem 剧本版本历史列表项
+type ScriptVersionItem struct {
+	Id                int64  `json:"id"`
+	VersionNo         int    `json:"version_no"`
+	ValidationStatus  string `json:"validation_status"`
+	HallucinationRisk string `json:"hallucination_risk"`
+	SafetyRisk        string `json:"safety_risk"`
+	CreatedBy         string `json:"created_by"`
+	CreatedAt         string `json:"created_at"`
+}
+
 // ScriptUpdateReq 修改剧本请求
 type ScriptUpdateReq struct {
-	ProjectId   int64  `json:"project_id"   v:"required#项目ID不能为空"`
+	ProjectId   int64  `json:"project_id"`
 	YamlContent string `json:"yaml_content" v:"required#YAML内容不能为空"`
 }
 
