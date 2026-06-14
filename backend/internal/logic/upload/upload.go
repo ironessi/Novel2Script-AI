@@ -35,6 +35,9 @@ func (u *uploadImpl) Upload(ctx context.Context, userId, projectId int64, filena
 	if err := filecheck.CheckExtension(filename); err != nil {
 		return nil, nil, err
 	}
+	if err := filecheck.CheckMIME(mimeType); err != nil {
+		return nil, nil, err
+	}
 	if err := filecheck.CheckFileSize(fileSize); err != nil {
 		return nil, nil, err
 	}

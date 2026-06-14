@@ -32,7 +32,7 @@ Novel2Script-AI 帮助小说作者将小说文本自动转换为结构化 YAML �
 | AI 服务 | Python + FastAPI + OpenAI SDK | 多阶段剧本生成流水线、幻觉检测、安全审查 |
 | 数据库 | MySQL 8.0 | 10 张业务表，BIGINT 主键，utf8mb4 |
 | 缓存 | Redis 7 | 任务进度跟踪、会话缓存 |
-| 容器化 | Docker Compose | MySQL + Redis 本地开发编排 |
+| 容器化 | Docker Compose | 前端 + 后端 + AI 服务 + MySQL + Redis 本地开发编排 |
 | LLM | DeepSeek / OpenAI / Ollama | 支持远程 API 和本地模型 |
 
 ### 第三方依赖
@@ -58,47 +58,52 @@ Novel2Script-AI 帮助小说作者将小说文本自动转换为结构化 YAML �
 
 ## 快速启动
 
-### 1. 启动基础设施
+本项目本地运行统一使用 Docker Compose。应用容器之间通过 Docker 网络通信：
 
-```bash
-cd deploy && docker compose up -d mysql redis
-```
+- 前端容器访问后端：`http://backend:8000`
+- 后端容器访问 AI 服务：`http://ai-service:9000`
+- 后端容器访问 MySQL：`mysql:3306`
+- 宿主机如需手动连接 MySQL：`127.0.0.1:3307`
 
-### 2. 初始化数据库
-
-```bash
-mysql -u root -p < deploy/mysql-init.sql
-mysql -u root -p novel2script < scripts/seed.sql
-```
-
-### 3. 配置环境变量
+### 1. 配置环境变量
 
 ```bash
 cp .env.example .env
-# 编辑 .env，填写 MySQL 密码、JWT Secret、LLM API Key
+# 编辑 .env，填写 JWT Secret、AI_SERVICE_TOKEN、LLM API Key 等配置
 ```
 
-### 4. 启动后端
+### 2. 启动完整服务
 
 ```bash
-cd backend && go run main.go
-# 服务运行在 http://localhost:8000
+cd deploy
+docker compose up -d --build
 ```
 
-### 5. 启动 AI 服务
+首次创建 MySQL 数据卷时，`deploy/mysql-init.sql` 会自动建库建表。服务地址：
+
+- 前端：http://localhost:5173
+- 后端健康检查：http://localhost:8000/health
+- AI 服务健康检查：http://localhost:9000/health
+
+### 3. 可选：导入测试数据
 
 ```bash
-cd ai-service && pip install -r requirements.txt
-uvicorn app.main:app --host 0.0.0.0 --port 9000
-# 服务运行在 http://localhost:9000
-# API 文档：http://localhost:9000/docs
+cd deploy
+mysql --protocol=TCP -h 127.0.0.1 -P 3307 -u root -p novel2script < ../scripts/seed.sql
 ```
 
-### 6. 启动前端
+### 4. 查看日志
 
 ```bash
-cd frontend && npm install && npm run dev
-# 服务运行在 http://localhost:5173
+cd deploy
+docker compose logs -f backend ai-service frontend
+```
+
+### 5. 停止服务
+
+```bash
+cd deploy
+docker compose down
 ```
 
 ## 目录结构
@@ -215,7 +220,7 @@ Novel2Script-AI/
 | Vue3 前端 | 5173 |
 | GoFrame 后端 | 8000 |
 | Python AI 服务 | 9000 |
-| MySQL | 3306 |
+| MySQL | 容器内 3306 / 宿主机 3307 |
 | Redis | 6379 |
 
 ## License

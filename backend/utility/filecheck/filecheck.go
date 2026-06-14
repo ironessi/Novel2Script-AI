@@ -15,8 +15,8 @@ var AllowedTypes = map[string]bool{
 
 // AllowedMIMEs 允许的 MIME 类型
 var AllowedMIMEs = map[string]bool{
-	"text/plain":              true,
-	"text/markdown":           true,
+	"text/plain":    true,
+	"text/markdown": true,
 	"application/vnd.openxmlformats-officedocument.wordprocessingml.document": true,
 }
 
@@ -34,6 +34,10 @@ func CheckExtension(filename string) error {
 
 // CheckMIME 检查 MIME 类型是否合法
 func CheckMIME(mimeType string) error {
+	mimeType = strings.ToLower(strings.TrimSpace(mimeType))
+	if idx := strings.Index(mimeType, ";"); idx >= 0 {
+		mimeType = strings.TrimSpace(mimeType[:idx])
+	}
 	if !AllowedMIMEs[mimeType] {
 		return fmt.Errorf("不支持的 MIME 类型: %s", mimeType)
 	}

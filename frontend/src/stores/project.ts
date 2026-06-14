@@ -1,23 +1,16 @@
 import { defineStore } from 'pinia'
 import { projectApi, chapterApi, scriptApi, auditApi, taskApi, resultApi } from '@/api'
 import * as yaml from 'js-yaml'
-import {
-  mockCharacters,
-  mockPlotEvents,
-  mockScenes,
-  mockYamlScript,
-  mockValidationIssues,
-  mockVersions,
-  mockWorkflowSteps,
-  type Project,
-  type Chapter,
-  type Character,
-  type PlotEvent,
-  type Scene,
-  type ValidationIssue,
-  type Version,
-  type AuditLog,
-  type WorkflowStep
+import type {
+  Project,
+  Chapter,
+  Character,
+  PlotEvent,
+  Scene,
+  ValidationIssue,
+  Version,
+  AuditLog,
+  WorkflowStep
 } from '@/mock/data'
 
 export const useProjectStore = defineStore('project', {
@@ -25,14 +18,14 @@ export const useProjectStore = defineStore('project', {
     projects: [] as Project[],
     currentProjectId: 0,
     chapters: [] as Chapter[],
-    characters: [...mockCharacters] as Character[],
-    plotEvents: [...mockPlotEvents] as PlotEvent[],
-    scenes: [...mockScenes] as Scene[],
-    yamlScript: mockYamlScript as string,
-    validationIssues: [...mockValidationIssues] as ValidationIssue[],
-    versions: [...mockVersions] as Version[],
+    characters: [] as Character[],
+    plotEvents: [] as PlotEvent[],
+    scenes: [] as Scene[],
+    yamlScript: '' as string,
+    validationIssues: [] as ValidationIssue[],
+    versions: [] as Version[],
     auditLogs: [] as AuditLog[],
-    workflowSteps: [...mockWorkflowSteps] as WorkflowStep[],
+    workflowSteps: [] as WorkflowStep[],
     selectedSceneId: '' as string,
     selectedCharacterId: '' as string,
     loading: false
@@ -60,6 +53,7 @@ export const useProjectStore = defineStore('project', {
     },
 
     async fetchChapters(projectId: number) {
+      this.chapters = []
       try {
         const res: any = await chapterApi.list(projectId)
         if (res.code === 0) {
@@ -71,6 +65,8 @@ export const useProjectStore = defineStore('project', {
     },
 
     async fetchScript(projectId: number) {
+      this.yamlScript = ''
+      this.scenes = []
       try {
         const res: any = await scriptApi.get(projectId)
         if (res.code === 0) {
@@ -97,57 +93,78 @@ export const useProjectStore = defineStore('project', {
     },
 
     async fetchCharacters(projectId: number) {
-      const res: any = await resultApi.characters(projectId)
-      if (res.code === 0) {
-        this.characters = (res.data.characters || []).map((item: any) => ({
-          id: item.character_key,
-          name: item.name,
-          aliases: item.aliases || [],
-          role: item.role_type,
-          description: item.description,
-          personality: item.personality || [],
-          relationships: item.relationships || [],
-          source_trace: item.source_refs || [],
-          confidence: item.confidence
-        }))
+      this.characters = []
+      try {
+        const res: any = await resultApi.characters(projectId)
+        if (res.code === 0) {
+          this.characters = (res.data.characters || []).map((item: any) => ({
+            id: item.character_key,
+            name: item.name,
+            aliases: item.aliases || [],
+            role: item.role_type,
+            description: item.description,
+            personality: item.personality || [],
+            relationships: item.relationships || [],
+            source_trace: item.source_refs || [],
+            confidence: item.confidence
+          }))
+        }
+      } catch (e) {
+        console.error('获取人物档案失败', e)
       }
     },
 
     async fetchPlotEvents(projectId: number) {
-      const res: any = await resultApi.plotEvents(projectId)
-      if (res.code === 0) {
-        this.plotEvents = (res.data.plot_events || []).map((item: any) => ({
-          id: item.event_key,
-          chapter_index: item.chapter_index,
-          trigger: item.trigger_text,
-          action: item.action_text,
-          result: item.result_text,
-          importance: item.importance,
-          characters_involved: [],
-          source_trace: item.source_refs || [],
-          confidence: item.confidence
-        }))
+      this.plotEvents = []
+      try {
+        const res: any = await resultApi.plotEvents(projectId)
+        if (res.code === 0) {
+          this.plotEvents = (res.data.plot_events || []).map((item: any) => ({
+            id: item.event_key,
+            chapter_index: item.chapter_index,
+            trigger: item.trigger_text,
+            action: item.action_text,
+            result: item.result_text,
+            importance: item.importance,
+            characters_involved: [],
+            source_trace: item.source_refs || [],
+            confidence: item.confidence
+          }))
+        }
+      } catch (e) {
+        console.error('获取剧情事件失败', e)
       }
     },
 
     async fetchVersions(projectId: number) {
-      const res: any = await resultApi.versions(projectId)
-      if (res.code === 0) {
-        this.versions = res.data.versions || []
+      this.versions = []
+      try {
+        const res: any = await resultApi.versions(projectId)
+        if (res.code === 0) {
+          this.versions = res.data.versions || []
+        }
+      } catch (e) {
+        console.error('获取版本历史失败', e)
       }
     },
 
     async fetchValidationIssues(projectId: number) {
-      const res: any = await resultApi.validationIssues(projectId)
-      if (res.code === 0) {
-        this.validationIssues = (res.data.issues || []).map((issue: any) => ({
-          ...issue,
-          resolved: Boolean(issue.resolved)
-        }))
+      this.validationIssues = []
+      try {
+        const res: any = await resultApi.validationIssues(projectId)
+        if (res.code === 0) {
+          this.validationIssues = (res.data.issues || []).map((issue: any) => ({
+            ...issue,
+            resolved: Boolean(issue.resolved)
+          }))
+        }
+      } catch (e) {
+        console.error('获取校验问题失败', e)
       }
     },
 
     async fetchAuditLogs(projectId: number) {
+      this.auditLogs = []
       try {
         const res: any = await auditApi.list(projectId, { page: 1, page_size: 50 })
         if (res.code === 0) {
@@ -209,7 +226,23 @@ export const useProjectStore = defineStore('project', {
     },
 
     setCurrentProject(id: number) {
+      if (this.currentProjectId && this.currentProjectId !== id) {
+        this.clearProjectArtifacts()
+      }
       this.currentProjectId = id
+    },
+    clearProjectArtifacts() {
+      this.chapters = []
+      this.characters = []
+      this.plotEvents = []
+      this.scenes = []
+      this.yamlScript = ''
+      this.validationIssues = []
+      this.versions = []
+      this.auditLogs = []
+      this.workflowSteps = []
+      this.selectedSceneId = ''
+      this.selectedCharacterId = ''
     },
     selectScene(id: string) {
       this.selectedSceneId = id

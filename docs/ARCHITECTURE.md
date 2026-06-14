@@ -26,7 +26,7 @@ Novel2Script-AI 采用前后端分离的三层架构：
 | 数据库 | MySQL 8.0 | 持久化存储业务数据 |
 | 缓存 | Redis 7 | 任务状态、生成进度、会话缓存 |
 | 文件存储 | 本地文件系统 | 上传小说文件、导出剧本文件 |
-| 容器化 | Docker Compose | 本地开发环境编排 |
+| 容器化 | Docker Compose | 前端、后端、AI 服务、MySQL、Redis 本地开发环境编排 |
 
 ## 3. 模块职责
 
@@ -118,29 +118,35 @@ Novel2Script-AI 采用前后端分离的三层架构：
 | Frontend | 5173 |
 | Backend | 8000 |
 | AI Service | 9000 |
-| MySQL | 3306 |
+| MySQL | 容器内 3306 / 宿主机 3307 |
 | Redis | 6379 |
 
 ## 7. 开发模式
 
-### 本地开发
+### Docker Compose 本地开发
 
 ```bash
-# 启动基础设施
-docker compose up -d mysql redis
-
-# 启动后端
-cd backend && go run main.go
-
-# 启动 AI 服务
-cd ai-service && uvicorn app.main:app --host 0.0.0.0 --port 9000 --reload
-
-# 启动前端
-cd frontend && npm run dev
+cd deploy
+docker compose up -d --build
 ```
 
-### Docker Compose 一键启动
+应用容器之间使用 Docker 网络服务名通信：
+
+- Frontend → Backend：`http://backend:8000`
+- Backend → AI Service：`http://ai-service:9000`
+- Backend → MySQL：`mysql:3306`
+- Backend → Redis：`redis:6379`
+
+宿主机访问地址：
+
+- 前端：http://localhost:5173
+- 后端：http://localhost:8000
+- AI 服务：http://localhost:9000
+- MySQL：`127.0.0.1:3307`
+
+停止服务：
 
 ```bash
-docker compose up -d
+cd deploy
+docker compose down
 ```

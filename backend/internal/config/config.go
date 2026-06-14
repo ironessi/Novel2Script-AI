@@ -2,6 +2,8 @@ package config
 
 import (
 	"bufio"
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"strings"
@@ -60,6 +62,12 @@ func Init() {
 	loadEnvFile("../.env")
 	loadEnvFile(".env")
 
+	jwtSecret := getEnv("JWT_SECRET", "")
+	if isInsecureSecret(jwtSecret) {
+		jwtSecret = randomSecret()
+		fmt.Println("[Config] WARNING: JWT_SECRET is missing or insecure; using an ephemeral startup secret")
+	}
+
 	C = &Config{
 		App: AppConfig{
 			Env:  getEnv("APP_ENV", "local"),
@@ -79,7 +87,7 @@ func Init() {
 			DB:       2,
 		},
 		JWT: JWTConfig{
-			Secret: getEnv("JWT_SECRET", "default_secret_change_me"),
+			Secret: jwtSecret,
 		},
 		AI: AIServiceConfig{
 			URL:   getEnv("AI_SERVICE_URL", "http://localhost:9000"),
@@ -93,6 +101,28 @@ func Init() {
 	}
 
 	fmt.Printf("[Config] MySQL: %s:%s@%s:%s/%s\n", C.MySQL.User, "***", C.MySQL.Host, C.MySQL.Port, C.MySQL.Database)
+}
+
+func isInsecureSecret(secret string) bool {
+	trimmed := strings.TrimSpace(secret)
+	if trimmed == "" {
+		return true
+	}
+	insecureValues := map[string]bool{
+		"default_secret_change_me":                            true,
+		"change_me":                                           true,
+		"change_me_to_a_long_random_string":                   true,
+		"change_me_to_a_long_random_string_at_least_32_chars": true,
+	}
+	return insecureValues[trimmed] || len(trimmed) < 32
+}
+
+func randomSecret() string {
+	buf := make([]byte, 32)
+	if _, err := rand.Read(buf); err != nil {
+		return fmt.Sprintf("ephemeral-%d", os.Getpid())
+	}
+	return hex.EncodeToString(buf)
 }
 
 func getEnv(key, defaultVal string) string {

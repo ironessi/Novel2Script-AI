@@ -45,7 +45,12 @@ async def verify_internal_token(request: Request, call_next):
 
     # 验证 Token
     token = request.headers.get("Authorization", "").replace("Bearer ", "")
-    if settings.AI_SERVICE_TOKEN and token != settings.AI_SERVICE_TOKEN:
+    if not settings.AI_SERVICE_TOKEN:
+        return JSONResponse(
+            status_code=503,
+            content={"detail": "AI_SERVICE_TOKEN is not configured"},
+        )
+    if token != settings.AI_SERVICE_TOKEN:
         return JSONResponse(
             status_code=401,
             content={"detail": "Invalid internal token"},
