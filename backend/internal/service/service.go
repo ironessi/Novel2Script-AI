@@ -33,6 +33,7 @@ type IChapter interface {
 type ITask interface {
 	Create(ctx context.Context, userId, projectId int64, taskType string) (*entity.AiTask, error)
 	GetStatus(ctx context.Context, taskId int64) (*entity.AiTask, error)
+	GetLatestByProject(ctx context.Context, projectId int64) (*entity.AiTask, error)
 }
 
 // IScript 剧本服务接口

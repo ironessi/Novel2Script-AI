@@ -1,9 +1,12 @@
 package upload
 
 import (
+	"archive/zip"
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/xml"
 	"fmt"
 	"io"
 	"os"
@@ -79,9 +82,12 @@ func (u *uploadImpl) Upload(ctx context.Context, userId, projectId int64, filena
 	}
 
 	textContent := string(content)
-	// 如果是 docx，提取纯文本（简化处理）
 	if ext == ".docx" {
-		textContent = extractTextFromDocx(textContent)
+		textContent, err = extractTextFromDocx(content)
+		if err != nil {
+			os.Remove(storagePath)
+			return nil, nil, fmt.Errorf("解析 DOCX 内容失败: %w", err)
+		}
 	}
 
 	// 清洗文本
@@ -205,31 +211,84 @@ func splitChapters(projectId int64, text string) []entity.NovelChapter {
 	return chapters
 }
 
-// extractTextFromDocx 从 docx 内容提取纯文本（简化版）
-// 完整实现应使用 gooxml 库解析 XML
-func extractTextFromDocx(content string) string {
-	// 简单提取：<w:t> 标签中的文本
-	var result strings.Builder
-	lines := strings.Split(content, "<w:t")
-	for _, line := range lines[1:] {
-		endIdx := strings.Index(line, "</w:t>")
-		if endIdx == -1 {
-			endIdx = strings.Index(line, "/>")
-			if endIdx == -1 {
-				continue
-			}
+// extractTextFromDocx extracts paragraphs from word/document.xml inside a DOCX zip.
+func extractTextFromDocx(content []byte) (string, error) {
+	reader, err := zip.NewReader(bytes.NewReader(content), int64(len(content)))
+	if err != nil {
+		return "", err
+	}
+
+	var document *zip.File
+	for _, file := range reader.File {
+		if file.Name == "word/document.xml" {
+			document = file
+			break
 		}
-		text := line[:endIdx]
-		// 去除标签属性
-		if idx := strings.Index(text, ">"); idx != -1 {
-			text = text[idx+1:]
+	}
+	if document == nil {
+		return "", fmt.Errorf("缺少 word/document.xml")
+	}
+
+	rc, err := document.Open()
+	if err != nil {
+		return "", err
+	}
+	defer rc.Close()
+
+	decoder := xml.NewDecoder(rc)
+	var result strings.Builder
+	var paragraph strings.Builder
+	inText := false
+
+	flushParagraph := func() {
+		text := strings.TrimSpace(paragraph.String())
+		paragraph.Reset()
+		if text == "" {
+			return
+		}
+		if result.Len() > 0 {
+			result.WriteString("\n\n")
 		}
 		result.WriteString(text)
 	}
 
-	if result.Len() == 0 {
-		// 如果无法解析，返回原文
-		return content
+	for {
+		token, err := decoder.Token()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return "", err
+		}
+
+		switch t := token.(type) {
+		case xml.StartElement:
+			switch t.Name.Local {
+			case "t":
+				inText = true
+			case "tab":
+				paragraph.WriteByte('\t')
+			case "br", "cr":
+				paragraph.WriteByte('\n')
+			}
+		case xml.CharData:
+			if inText {
+				paragraph.Write([]byte(t))
+			}
+		case xml.EndElement:
+			switch t.Name.Local {
+			case "t":
+				inText = false
+			case "p":
+				flushParagraph()
+			}
+		}
 	}
-	return result.String()
+	flushParagraph()
+
+	text := strings.TrimSpace(result.String())
+	if text == "" {
+		return "", fmt.Errorf("未提取到正文")
+	}
+	return text, nil
 }

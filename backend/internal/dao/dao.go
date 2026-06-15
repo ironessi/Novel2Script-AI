@@ -338,6 +338,27 @@ func GetTaskById(ctx context.Context, taskId int64) (*entity.AiTask, error) {
 	return &task, nil
 }
 
+// GetLatestTaskByProject 获取项目最近一次 AI 任务
+func GetLatestTaskByProject(ctx context.Context, projectId int64) (*entity.AiTask, error) {
+	record, err := db.Model("ai_task").Ctx(ctx).
+		Where("project_id", projectId).
+		OrderDesc("created_at").
+		OrderDesc("id").
+		Limit(1).
+		One()
+	if err != nil {
+		return nil, err
+	}
+	if record.IsEmpty() {
+		return nil, nil
+	}
+	var task entity.AiTask
+	if err := record.Struct(&task); err != nil {
+		return nil, err
+	}
+	return &task, nil
+}
+
 // ==================== Script Version DAO ====================
 
 // GetLatestScript 获取最新剧本版本

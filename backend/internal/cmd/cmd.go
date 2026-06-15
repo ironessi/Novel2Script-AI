@@ -98,6 +98,7 @@ var Main = gcmd.Command{
 
 				// 任务
 				projGroup.POST("/:id/generate", task.Controller.Create)
+				projGroup.GET("/:id/tasks/latest", task.Controller.LatestByProject)
 
 				// 剧本
 				projGroup.GET("/:id/script", script.Controller.Get)

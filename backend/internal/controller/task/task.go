@@ -5,6 +5,7 @@ import (
 
 	v1 "novel2script-backend/api/v1"
 	"novel2script-backend/internal/middleware"
+	"novel2script-backend/internal/model/entity"
 	"novel2script-backend/internal/service"
 
 	"github.com/gogf/gf/v2/frame/g"
@@ -75,16 +76,48 @@ func (c *taskController) Status(r *ghttp.Request) {
 
 	r.Response.WriteJsonExit(g.Map{
 		"code": 0,
-		"data": v1.TaskStatusRes{
-			Id:           task.Id,
-			ProjectId:    task.ProjectId,
-			TaskType:     task.TaskType,
-			Status:       task.Status,
-			Progress:     task.Progress,
-			CurrentStep:  task.CurrentStep,
-			ErrorMessage: task.ErrorMessage,
-			CreatedAt:    task.CreatedAt.Format("2006-01-02 15:04:05"),
-			UpdatedAt:    task.UpdatedAt.Format("2006-01-02 15:04:05"),
-		},
+		"data": toTaskStatusRes(task),
 	})
+}
+
+// LatestByProject 查询项目最近一次任务，用于页面刷新后恢复工作流状态
+func (c *taskController) LatestByProject(r *ghttp.Request) {
+	projectId, err := strconv.ParseInt(r.GetRouter("id").String(), 10, 64)
+	if err != nil {
+		r.Response.WriteJsonExit(g.Map{"code": 400, "message": "无效的项目ID"})
+		return
+	}
+
+	userId := middleware.GetUserID(r)
+	ok, err := service.Project.CheckPermission(r.Context(), userId, projectId)
+	if err != nil || !ok {
+		r.Response.WriteJsonExit(g.Map{"code": 403, "message": "无权访问此项目"})
+		return
+	}
+
+	task, err := service.Task.GetLatestByProject(r.Context(), projectId)
+	if err != nil {
+		r.Response.WriteJsonExit(g.Map{"code": 500, "message": "获取任务记录失败"})
+		return
+	}
+	if task == nil {
+		r.Response.WriteJsonExit(g.Map{"code": 0, "data": nil})
+		return
+	}
+
+	r.Response.WriteJsonExit(g.Map{"code": 0, "data": toTaskStatusRes(task)})
+}
+
+func toTaskStatusRes(task *entity.AiTask) v1.TaskStatusRes {
+	return v1.TaskStatusRes{
+		Id:           task.Id,
+		ProjectId:    task.ProjectId,
+		TaskType:     task.TaskType,
+		Status:       task.Status,
+		Progress:     task.Progress,
+		CurrentStep:  task.CurrentStep,
+		ErrorMessage: task.ErrorMessage,
+		CreatedAt:    task.CreatedAt.Format("2006-01-02 15:04:05"),
+		UpdatedAt:    task.UpdatedAt.Format("2006-01-02 15:04:05"),
+	}
 }

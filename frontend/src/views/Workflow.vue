@@ -50,8 +50,22 @@
         <n-alert type="success" title="分析完成">
           AI 分析已完成，可以查看生成的剧本。
         </n-alert>
-        <n-button type="primary" style="margin-top: 16px;" @click="router.push(`/projects/${projectId}/workbench`)">
-          进入创作工作台
+        <n-space style="margin-top: 16px;">
+          <n-button type="primary" @click="router.push(`/projects/${projectId}/workbench`)">
+            进入创作工作台
+          </n-button>
+          <n-button :loading="starting" @click="handleStart">
+            重新分析
+          </n-button>
+        </n-space>
+      </div>
+
+      <div v-if="taskStatus === 'failed'" class="complete-section">
+        <n-alert type="error" title="分析失败">
+          {{ taskError || 'AI 分析未完成，请重新尝试。' }}
+        </n-alert>
+        <n-button type="primary" style="margin-top: 16px;" :loading="starting" @click="handleStart">
+          重新分析
         </n-button>
       </div>
     </div>
@@ -103,6 +117,11 @@ async function handleStart() {
     const id = await store.triggerGenerate(projectId)
     taskId.value = id
     taskStatus.value = 'pending'
+    taskProgress.value = 0
+    taskStep.value = ''
+    taskError.value = ''
+    resetSteps()
+    await pollTask()
     startPolling()
   } catch (e: any) {
     alert(e.message || '创建任务失败')
@@ -112,32 +131,62 @@ async function handleStart() {
 }
 
 function startPolling() {
+  stopPolling()
   pollTimer = setInterval(async () => {
-    if (!taskId.value) return
-    try {
-      const status = await store.checkTaskStatus(taskId.value)
-      taskStatus.value = status.status
-      taskProgress.value = status.progress
-      taskStep.value = status.current_step || ''
-      taskError.value = status.error_message || ''
-
-      // 更新步骤状态
-      if (status.status === 'running') {
-        steps.value[0].status = 'completed'
-        steps.value[1].status = 'running'
-      } else if (status.status === 'completed') {
-        steps.value[0].status = 'completed'
-        steps.value[1].status = 'completed'
-        steps.value[2].status = 'completed'
-        stopPolling()
-      } else if (status.status === 'failed') {
-        steps.value[1].status = 'failed'
-        stopPolling()
-      }
-    } catch (e) {
-      console.error('轮询失败', e)
-    }
+    await pollTask()
   }, 3000)
+}
+
+async function pollTask() {
+  if (!taskId.value) return
+  try {
+    const status = await store.checkTaskStatus(taskId.value)
+    applyTaskStatus(status)
+  } catch (e) {
+    console.error('轮询失败', e)
+  }
+}
+
+async function restoreLatestTask() {
+  try {
+    const latest = await store.fetchLatestTask(projectId)
+    if (!latest) return
+    taskId.value = latest.id
+    applyTaskStatus(latest)
+  } catch (e) {
+    console.error('恢复任务记录失败', e)
+  }
+}
+
+function applyTaskStatus(status: any) {
+  taskStatus.value = status.status
+  taskProgress.value = status.progress
+  taskStep.value = status.current_step || ''
+  taskError.value = status.error_message || ''
+  updateSteps(status.status)
+}
+
+function resetSteps() {
+  steps.value = steps.value.map(step => ({ ...step, status: 'pending' }))
+}
+
+function updateSteps(status: string) {
+  resetSteps()
+  if (status === 'pending') {
+    steps.value[0].status = 'running'
+  } else if (status === 'running') {
+    steps.value[0].status = 'completed'
+    steps.value[1].status = 'running'
+  } else if (status === 'completed') {
+    steps.value[0].status = 'completed'
+    steps.value[1].status = 'completed'
+    steps.value[2].status = 'completed'
+    stopPolling()
+  } else if (status === 'failed') {
+    steps.value[0].status = 'completed'
+    steps.value[1].status = 'failed'
+    stopPolling()
+  }
 }
 
 function stopPolling() {
@@ -147,8 +196,12 @@ function stopPolling() {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   store.setCurrentProject(projectId)
+  await restoreLatestTask()
+  if (taskId.value && ['pending', 'running'].includes(taskStatus.value)) {
+    startPolling()
+  }
 })
 
 onUnmounted(() => {

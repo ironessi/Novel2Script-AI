@@ -42,3 +42,7 @@ func (t *taskImpl) Create(ctx context.Context, userId, projectId int64, taskType
 func (t *taskImpl) GetStatus(ctx context.Context, taskId int64) (*entity.AiTask, error) {
 	return dao.GetTaskById(ctx, taskId)
 }
+
+func (t *taskImpl) GetLatestByProject(ctx context.Context, projectId int64) (*entity.AiTask, error) {
+	return dao.GetLatestTaskByProject(ctx, projectId)
+}

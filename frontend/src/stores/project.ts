@@ -225,6 +225,14 @@ export const useProjectStore = defineStore('project', {
       throw new Error('获取任务状态失败')
     },
 
+    async fetchLatestTask(projectId: number) {
+      const res: any = await taskApi.latestByProject(projectId)
+      if (res.code === 0) {
+        return res.data || null
+      }
+      throw new Error(res.message || '获取任务记录失败')
+    },
+
     setCurrentProject(id: number) {
       if (this.currentProjectId && this.currentProjectId !== id) {
         this.clearProjectArtifacts()

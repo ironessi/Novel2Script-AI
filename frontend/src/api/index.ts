@@ -68,7 +68,9 @@ export const chapterApi = {
 export const taskApi = {
   create: (projectId: number, data: { task_type: string }) =>
     api.post(`/projects/${projectId}/generate`, data),
-  status: (taskId: number) => api.get(`/tasks/${taskId}/status`)
+  status: (taskId: number) => api.get(`/tasks/${taskId}/status`),
+  latestByProject: (projectId: number) =>
+    api.get(`/projects/${projectId}/tasks/latest`)
 }
 
 // ========== Script ==========
